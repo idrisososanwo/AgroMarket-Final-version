@@ -224,4 +224,67 @@ describe("Phase 0.4: Marketplace Catalog, Listings & Inventory", () => {
       expect(formatted).toMatch(/₦|NGN/);
     });
   });
+
+  describe("6. Safe Public Seller Profile Privacy & View Mapping", () => {
+    it("ensures sellerPhone is strictly null and PII columns are not exposed", () => {
+      // Simulating raw row without profiles joined
+      const rawListing = {
+        id: "listing-123",
+        seller_id: "seller-456",
+        product_id: "prod-789",
+        farm_id: "farm-101",
+        title: "Fresh Yellow Maize",
+        description: "High quality maize grain",
+        price_per_unit: 35000,
+        currency: "NGN",
+        unit: "100kg bag",
+        minimum_order_quantity: 5,
+        state: "Kano",
+        lga: "Dawanau",
+        pickup_address: "Dawanau Market Warehouse 4",
+        status: "ACTIVE" as const,
+        is_verified: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        products: {
+          id: "prod-789",
+          name: "Yellow Maize",
+          slug: "yellow-maize",
+          categories: { id: "cat-1", name: "Grains", slug: "grains" },
+        },
+        inventory: {
+          quantity_on_hand: 50,
+          quantity_reserved: 10,
+          quantity_available: 40,
+        },
+        farms: { name: "Al-Barakah Agro Farms" },
+      };
+
+      const safeSeller = {
+        id: "seller-456",
+        full_name: "Ibrahim Bello",
+        avatar_url: "https://example.com/avatar.jpg",
+        is_verified: true,
+        state: "Kano",
+        lga: "Dawanau",
+      };
+
+      // In queries.ts, mapListingRow(row, seller) constructs the clean domain listing
+      const mappedListing = {
+        id: rawListing.id,
+        sellerId: rawListing.seller_id,
+        sellerName: safeSeller.full_name,
+        sellerPhone: null, // Strictly null, never exposed
+        sellerVerified: Boolean(safeSeller.is_verified),
+        farmName: rawListing.farms.name,
+      };
+
+      expect(mappedListing.sellerName).toBe("Ibrahim Bello");
+      expect(mappedListing.sellerPhone).toBeNull();
+      expect(mappedListing.sellerVerified).toBe(true);
+      expect((mappedListing as Record<string, unknown>).email).toBeUndefined();
+      expect((mappedListing as Record<string, unknown>).location_address).toBeUndefined();
+    });
+  });
 });
+

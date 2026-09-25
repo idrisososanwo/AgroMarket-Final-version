@@ -53,14 +53,18 @@ interface RawListingRow {
         quantity_available?: number | string | null;
       }>
     | null;
-  profiles?: {
-    full_name?: string | null;
-    phone?: string | null;
-    is_verified?: boolean | null;
-  } | null;
   farms?: {
     name?: string | null;
   } | null;
+}
+
+interface SafeSellerProfile {
+  id: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  is_verified?: boolean | null;
+  state?: string | null;
+  lga?: string | null;
 }
 
 interface RawCanonicalProductRow {
@@ -73,11 +77,13 @@ interface RawCanonicalProductRow {
   } | null;
 }
 
-function mapListingRow(row: RawListingRow): MarketplaceListing {
+function mapListingRow(
+  row: RawListingRow,
+  seller?: SafeSellerProfile | null
+): MarketplaceListing {
   const inv = Array.isArray(row.inventory) ? row.inventory[0] : row.inventory;
   const prod = row.products;
   const cat = prod?.categories;
-  const prof = row.profiles;
   const farm = row.farms;
 
   return {
@@ -105,9 +111,9 @@ function mapListingRow(row: RawListingRow): MarketplaceListing {
     quantityOnHand: Number(inv?.quantity_on_hand || 0),
     quantityReserved: Number(inv?.quantity_reserved || 0),
     quantityAvailable: Number(inv?.quantity_available || 0),
-    sellerName: prof?.full_name || "Verified Farmer",
-    sellerPhone: prof?.phone,
-    sellerVerified: Boolean(prof?.is_verified),
+    sellerName: seller?.full_name || "Verified Farmer",
+    sellerPhone: null,
+    sellerVerified: Boolean(seller?.is_verified),
     farmName: farm?.name,
   };
 }
@@ -162,11 +168,6 @@ export async function getMarketplaceListings(
           quantity_reserved,
           quantity_available
         ),
-        profiles!listings_seller_id_fkey (
-          full_name,
-          phone,
-          is_verified
-        ),
         farms (
           name
         )
@@ -219,7 +220,12 @@ export async function getMarketplaceListings(
   const { data, count, error } = await query;
 
   if (error) {
-    console.error("Error fetching marketplace listings:", error);
+    console.error("Error fetching marketplace listings:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
     return {
       listings: [],
       totalCount: 0,
@@ -232,8 +238,27 @@ export async function getMarketplaceListings(
   const totalCount = count || 0;
   const totalPages = Math.ceil(totalCount / limit);
 
+  const rawRows = ((data as unknown as RawListingRow[]) || []);
+  const sellerIds = Array.from(new Set(rawRows.map((r) => r.seller_id).filter(Boolean)));
+
+  const sellerMap = new Map<string, SafeSellerProfile>();
+  if (sellerIds.length > 0) {
+    const { data: sellers } = await supabase
+      .from("marketplace_seller_profiles")
+      .select("id, full_name, avatar_url, is_verified, state, lga")
+      .in("id", sellerIds);
+
+    if (sellers) {
+      for (const s of sellers) {
+        sellerMap.set(s.id, s as SafeSellerProfile);
+      }
+    }
+  }
+
   // Map raw data into clean domain interface
-  const listings: MarketplaceListing[] = ((data as unknown as RawListingRow[]) || []).map(mapListingRow);
+  const listings: MarketplaceListing[] = rawRows.map((row) =>
+    mapListingRow(row, sellerMap.get(row.seller_id))
+  );
 
   return {
     listings,
@@ -245,7 +270,7 @@ export async function getMarketplaceListings(
 }
 
 /**
- * Retrieves a single listing by ID with full details, inventory status, and seller profile.
+ * Retrieves a single listing by ID with full details, inventory status, and safe seller profile.
  */
 export async function getMarketplaceListingById(
   listingId: string
@@ -288,11 +313,6 @@ export async function getMarketplaceListingById(
           quantity_reserved,
           quantity_available
         ),
-        profiles!listings_seller_id_fkey (
-          full_name,
-          phone,
-          is_verified
-        ),
         farms (
           name
         )
@@ -305,7 +325,18 @@ export async function getMarketplaceListingById(
     return null;
   }
 
-  return mapListingRow(data as unknown as RawListingRow);
+  const rawRow = data as unknown as RawListingRow;
+  let seller: SafeSellerProfile | null = null;
+  if (rawRow.seller_id) {
+    const { data: sellerData } = await supabase
+      .from("marketplace_seller_profiles")
+      .select("id, full_name, avatar_url, is_verified, state, lga")
+      .eq("id", rawRow.seller_id)
+      .maybeSingle();
+    seller = sellerData as SafeSellerProfile | null;
+  }
+
+  return mapListingRow(rawRow, seller);
 }
 
 /**
@@ -361,11 +392,6 @@ export async function getSellerListings(
           quantity_reserved,
           quantity_available
         ),
-        profiles!listings_seller_id_fkey (
-          full_name,
-          phone,
-          is_verified
-        ),
         farms (
           name
         )
@@ -378,7 +404,18 @@ export async function getSellerListings(
     return [];
   }
 
-  return ((data as unknown as RawListingRow[]) || []).map(mapListingRow);
+  const rawRows = ((data as unknown as RawListingRow[]) || []);
+  let seller: SafeSellerProfile | null = null;
+  if (targetSellerId) {
+    const { data: sellerData } = await supabase
+      .from("marketplace_seller_profiles")
+      .select("id, full_name, avatar_url, is_verified, state, lga")
+      .eq("id", targetSellerId)
+      .maybeSingle();
+    seller = sellerData as SafeSellerProfile | null;
+  }
+
+  return rawRows.map((row) => mapListingRow(row, seller));
 }
 
 /**
