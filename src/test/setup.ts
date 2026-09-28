@@ -1,5 +1,8 @@
 // Global test setup for Vitest
 import { beforeAll } from "vitest";
+import React from "react";
+
+(globalThis as unknown as { React: typeof React }).React = React;
 
 beforeAll(() => {
   // Set test environment variables
@@ -8,3 +11,4 @@ beforeAll(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
   (process.env as Record<string, string | undefined>).NODE_ENV = "test";
 });
+
