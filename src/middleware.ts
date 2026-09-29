@@ -8,7 +8,7 @@ const PROTECTED_PREFIXES = [
   "/business",
   "/jobs",
   "/services",
-  "/equipment",
+  "/equipment/owner",
   "/admin",
 ];
 

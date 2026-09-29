@@ -1,12 +1,17 @@
 /**
- * Equipment Domain Boundary
- * Farm machinery rental and leasing (tractors, harvesters, planters, boom sprayers).
+ * AgroMarket Equipment Domain Boundary
+ * Farm machinery rental and leasing (tractors, harvesters, planters, sprayers, etc.).
  */
-export interface EquipmentListing {
-  id: string;
-  ownerId: string;
-  equipmentType: string;
-  dailyRateNgn: number;
-  locationState: string;
-  isOperational: boolean;
-}
+
+export * from "./types";
+export * from "./pricing";
+export * from "./validation";
+export * from "./queries";
+export * from "./actions";
+export * from "./components/rental-status-badge";
+export * from "./components/equipment-card";
+export * from "./components/equipment-filter-bar";
+export * from "./components/equipment-booking-form";
+export * from "./components/owner-equipment-form";
+export * from "./components/rental-action-controls";
+export * from "./components/owner-availability-toggle";

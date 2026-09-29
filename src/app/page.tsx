@@ -55,6 +55,12 @@ export default function HomePage() {
               Seller Dashboard & Inventory
             </Link>
             <Link
+              href="/equipment"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50 transition"
+            >
+              Equipment Rental & Leasing
+            </Link>
+            <Link
               href="/account"
               className="inline-flex items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 transition"
             >

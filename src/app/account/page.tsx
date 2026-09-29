@@ -91,8 +91,8 @@ export default async function AccountPage() {
           </form>
         </div>
 
-        {/* Marketplace Orders & Cart Quick Navigation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Marketplace Orders, Services & Equipment Rentals Quick Navigation */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
             href="/account/orders"
             className="flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm hover:border-emerald-500 hover:bg-emerald-50/20 transition"
@@ -100,7 +100,20 @@ export default async function AccountPage() {
             <div>
               <div className="text-sm font-bold text-foreground">My Produce Orders</div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Review your agricultural purchases, reserved stock, and receipts.
+                Review your agricultural purchases and reserved stock.
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-emerald-600 shrink-0 ml-2" />
+          </Link>
+
+          <Link
+            href="/account/equipment-rentals"
+            className="flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm hover:border-emerald-500 hover:bg-emerald-50/20 transition"
+          >
+            <div>
+              <div className="text-sm font-bold text-foreground">My Equipment Rentals</div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Track machinery bookings and coordinate handovers.
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-emerald-600 shrink-0 ml-2" />
@@ -113,7 +126,7 @@ export default async function AccountPage() {
             <div>
               <div className="text-sm font-bold text-foreground">Active Shopping Cart</div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                View items ready for checkout from multiple farm sellers.
+                View items ready for checkout from farm sellers.
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-emerald-600 shrink-0 ml-2" />
@@ -187,10 +200,10 @@ export default async function AccountPage() {
               )}
               {user.roles.includes("EQUIPMENT_OWNER") && (
                 <Link
-                  href="/equipment"
+                  href="/equipment/owner"
                   className="flex items-center justify-between rounded-lg border p-3 text-xs font-medium text-foreground hover:border-primary-500 hover:bg-primary-50/20"
                 >
-                  <span>Equipment Rentals</span>
+                  <span>Equipment Owner Console</span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </Link>
               )}
