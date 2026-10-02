@@ -82,6 +82,21 @@ export default async function AdminConsolePage() {
                 Audit Price Data &rarr;
               </div>
             </Link>
+
+            <Link
+              href="/admin/knowledge"
+              className="flex flex-col justify-between rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 transition hover:border-purple-600 hover:bg-purple-50/20"
+            >
+              <div>
+                <div className="text-sm font-bold text-neutral-900">Knowledge & Content Hub</div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Author agronomic guides, publish official government notices, and moderate extension bulletins.
+                </p>
+              </div>
+              <div className="mt-3 text-xs font-semibold text-purple-700">
+                Manage Knowledgebase &rarr;
+              </div>
+            </Link>
           </div>
         </div>
       </div>
