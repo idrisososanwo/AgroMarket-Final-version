@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
 import { getAssignedDeliveriesForProvider } from "@/features/logistics/queries";
+import { getActiveLogisticsCorridorAdvisories } from "@/features/agricultural-security/queries";
+import { CorridorAdvisoryBanner } from "@/features/agricultural-security/components/corridor-advisory-banner";
 import { formatNGN } from "@/features/marketplace/constants";
 
 export default async function LogisticsDeliveriesPage() {
@@ -9,6 +11,10 @@ export default async function LogisticsDeliveriesPage() {
   const isServiceProvider = user.roles.includes("SERVICE_PROVIDER");
 
   const deliveries = await getAssignedDeliveriesForProvider();
+  const involvedStates = Array.from(
+    new Set(deliveries.flatMap((d) => [d.pickupState, d.deliveryState]).filter(Boolean))
+  );
+  const corridorAdvisories = await getActiveLogisticsCorridorAdvisories(involvedStates);
 
   return (
     <div className="min-h-screen bg-stone-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -29,6 +35,9 @@ export default async function LogisticsDeliveriesPage() {
             <span className="text-2xl font-extrabold text-white">{deliveries.length}</span>
           </div>
         </div>
+
+        {/* Agricultural Corridor Security Advisory */}
+        <CorridorAdvisoryBanner advisories={corridorAdvisories} />
 
         {/* Deliveries Table / Cards */}
         {deliveries.length === 0 ? (

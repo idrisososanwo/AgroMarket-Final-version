@@ -87,6 +87,25 @@ export default async function LearnPage({ searchParams }: LearnPageProps) {
           <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         </div>
 
+        {/* Agricultural Security & Corridor Advisory Link Banner */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">
+              <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+              Phase 1.5 Agricultural Security & Resilience Layer
+            </div>
+            <p className="text-xs sm:text-sm text-amber-950 font-medium leading-relaxed">
+              Check physical security notices, logistics corridor advisories, and movement restrictions across Nigerian states.
+            </p>
+          </div>
+          <Link
+            href="/learn/security"
+            className="shrink-0 inline-flex items-center justify-center px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl shadow-sm transition"
+          >
+            Review Security Notices &rarr;
+          </Link>
+        </div>
+
         {/* Filter & Search Bar */}
         <KnowledgeFilterBar
           initialSearch={resolvedParams.search}

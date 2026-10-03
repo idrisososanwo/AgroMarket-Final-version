@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth/server";
 import { getDeliveryById } from "@/features/logistics/queries";
 import { DeliveryTimeline } from "@/features/logistics/components/delivery-timeline";
 import { ProviderActions } from "@/features/logistics/components/provider-actions";
+import { getActiveLogisticsCorridorAdvisories } from "@/features/agricultural-security/queries";
+import { CorridorAdvisoryBanner } from "@/features/agricultural-security/components/corridor-advisory-banner";
 import { formatNGN } from "@/features/marketplace/constants";
 
 interface DeliveryDetailPageProps {
@@ -31,6 +33,10 @@ export default async function DeliveryDetailPage({ params }: DeliveryDetailPageP
     notFound();
   }
 
+  const corridorAdvisories = await getActiveLogisticsCorridorAdvisories(
+    [delivery.pickupState, delivery.deliveryState].filter(Boolean)
+  );
+
   // Render view
   return (
     <div className="min-h-screen bg-stone-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -43,6 +49,9 @@ export default async function DeliveryDetailPage({ params }: DeliveryDetailPageP
           <span>/</span>
           <span className="text-emerald-950 font-semibold">{delivery.trackingNumber}</span>
         </div>
+
+        {/* Agricultural Corridor Security Advisory */}
+        <CorridorAdvisoryBanner advisories={corridorAdvisories} />
 
         {/* Header */}
         <div className="bg-emerald-900 text-white p-6 sm:p-8 rounded-2xl shadow-sm">
