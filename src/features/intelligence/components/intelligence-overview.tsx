@@ -8,10 +8,12 @@ import {
   IntelligenceRecommendation,
   IntelligenceEvaluation,
 } from "../types";
+import { AIReasoningRun } from "../reasoning-contracts";
 import { SignalsFeed } from "./signals-feed";
 import { RecommendationsList } from "./recommendations-list";
 import { EvaluationsTable } from "./evaluations-table";
 import { AgentsRegistryCard } from "./agents-registry-card";
+import { AIReasoningPanel } from "./ai-reasoning-panel";
 import { runDeterministicPipelineAction } from "../actions";
 import {
   BrainCircuit,
@@ -19,6 +21,7 @@ import {
   Lightbulb,
   History,
   Cpu,
+  Brain,
   Play,
 } from "lucide-react";
 import { NIGERIAN_STATES } from "@/features/marketplace/constants";
@@ -29,6 +32,7 @@ interface IntelligenceOverviewProps {
   observations: IntelligenceObservation[];
   recommendations: IntelligenceRecommendation[];
   evaluations: IntelligenceEvaluation[];
+  reasoningRuns?: AIReasoningRun[];
 }
 
 export function IntelligenceOverview({
@@ -37,9 +41,10 @@ export function IntelligenceOverview({
   observations: _observations,
   recommendations: initialRecommendations,
   evaluations,
+  reasoningRuns = [],
 }: IntelligenceOverviewProps) {
   const [activeTab, setActiveTab] = useState<
-    "signals" | "recommendations" | "evaluations" | "agents"
+    "signals" | "recommendations" | "evaluations" | "agents" | "reasoning"
   >("signals");
 
   const [signals, setSignals] = useState<IntelligenceSignal[]>(initialSignals);
@@ -218,6 +223,19 @@ export function IntelligenceOverview({
           <Cpu className="h-4 w-4" />
           <span>Agents Registry ({agents.length})</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("reasoning")}
+          className={`flex items-center space-x-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            activeTab === "reasoning"
+              ? "border-emerald-600 text-emerald-700"
+              : "border-transparent text-neutral-500 hover:text-neutral-700"
+          }`}
+        >
+          <Brain className="h-4 w-4" />
+          <span>AI Reasoning Runs ({reasoningRuns.length})</span>
+        </button>
       </div>
 
       {/* Tab Panels */}
@@ -227,6 +245,7 @@ export function IntelligenceOverview({
       )}
       {activeTab === "evaluations" && <EvaluationsTable evaluations={evaluations} />}
       {activeTab === "agents" && <AgentsRegistryCard agents={agents} />}
+      {activeTab === "reasoning" && <AIReasoningPanel runs={reasoningRuns} />}
     </div>
   );
 }

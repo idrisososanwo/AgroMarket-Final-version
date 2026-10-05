@@ -2584,6 +2584,222 @@ export interface Database {
           created_at?: string;
         };
       };
+      ai_reasoning_runs: {
+        Row: {
+          id: string;
+          agent_id: string;
+          objective:
+            | "MARKET_INTERPRETATION"
+            | "SUPPLY_DEMAND_ANALYSIS"
+            | "FOOD_SECURITY_ASSESSMENT"
+            | "LOGISTICS_IMPACT_ASSESSMENT"
+            | "SECURITY_IMPACT_ASSESSMENT"
+            | "PRODUCTION_SIGNAL_INTERPRETATION"
+            | "PROCESSING_BOTTLENECK_ANALYSIS"
+            | "GENERAL_AGRICULTURAL_INTELLIGENCE";
+          commodity: string;
+          state: string;
+          lga: string | null;
+          corridor: string | null;
+          provider: string;
+          model: string;
+          prompt_tokens: number;
+          completion_tokens: number;
+          latency_ms: number;
+          status:
+            | "PENDING"
+            | "COMPLETED"
+            | "FAILED"
+            | "REJECTED_SAFETY"
+            | "REJECTED_VALIDATION"
+            | "PROVIDER_UNAVAILABLE";
+          error_message: string | null;
+          requested_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          objective:
+            | "MARKET_INTERPRETATION"
+            | "SUPPLY_DEMAND_ANALYSIS"
+            | "FOOD_SECURITY_ASSESSMENT"
+            | "LOGISTICS_IMPACT_ASSESSMENT"
+            | "SECURITY_IMPACT_ASSESSMENT"
+            | "PRODUCTION_SIGNAL_INTERPRETATION"
+            | "PROCESSING_BOTTLENECK_ANALYSIS"
+            | "GENERAL_AGRICULTURAL_INTELLIGENCE";
+          commodity: string;
+          state: string;
+          lga?: string | null;
+          corridor?: string | null;
+          provider: string;
+          model: string;
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          latency_ms?: number;
+          status?:
+            | "PENDING"
+            | "COMPLETED"
+            | "FAILED"
+            | "REJECTED_SAFETY"
+            | "REJECTED_VALIDATION"
+            | "PROVIDER_UNAVAILABLE";
+          error_message?: string | null;
+          requested_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          objective?:
+            | "MARKET_INTERPRETATION"
+            | "SUPPLY_DEMAND_ANALYSIS"
+            | "FOOD_SECURITY_ASSESSMENT"
+            | "LOGISTICS_IMPACT_ASSESSMENT"
+            | "SECURITY_IMPACT_ASSESSMENT"
+            | "PRODUCTION_SIGNAL_INTERPRETATION"
+            | "PROCESSING_BOTTLENECK_ANALYSIS"
+            | "GENERAL_AGRICULTURAL_INTELLIGENCE";
+          commodity?: string;
+          state?: string;
+          lga?: string | null;
+          corridor?: string | null;
+          provider?: string;
+          model?: string;
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          latency_ms?: number;
+          status?:
+            | "PENDING"
+            | "COMPLETED"
+            | "FAILED"
+            | "REJECTED_SAFETY"
+            | "REJECTED_VALIDATION"
+            | "PROVIDER_UNAVAILABLE";
+          error_message?: string | null;
+          requested_by?: string | null;
+          created_at?: string;
+        };
+      };
+      ai_reasoning_outputs: {
+        Row: {
+          id: string;
+          run_id: string;
+          summary: string;
+          interpretation: string;
+          key_findings: Json;
+          supporting_evidence: Json;
+          uncertainty: string;
+          model_confidence: number;
+          evidence_confidence: number;
+          recommendation_title: string | null;
+          recommendation_text: string | null;
+          expected_impact: Json;
+          affected_actors: string[];
+          affected_commodities: string[];
+          affected_locations: string[];
+          limitations: string[];
+          safety_notes: string[];
+          generated_recommendation_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          run_id: string;
+          summary: string;
+          interpretation: string;
+          key_findings?: Json;
+          supporting_evidence?: Json;
+          uncertainty: string;
+          model_confidence: number;
+          evidence_confidence: number;
+          recommendation_title?: string | null;
+          recommendation_text?: string | null;
+          expected_impact?: Json;
+          affected_actors?: string[];
+          affected_commodities?: string[];
+          affected_locations?: string[];
+          limitations?: string[];
+          safety_notes?: string[];
+          generated_recommendation_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          run_id?: string;
+          summary?: string;
+          interpretation?: string;
+          key_findings?: Json;
+          supporting_evidence?: Json;
+          uncertainty?: string;
+          model_confidence?: number;
+          evidence_confidence?: number;
+          recommendation_title?: string | null;
+          recommendation_text?: string | null;
+          expected_impact?: Json;
+          affected_actors?: string[];
+          affected_commodities?: string[];
+          affected_locations?: string[];
+          limitations?: string[];
+          safety_notes?: string[];
+          generated_recommendation_id?: string | null;
+          created_at?: string;
+        };
+      };
+      ai_reasoning_audits: {
+        Row: {
+          id: string;
+          run_id: string;
+          event_type:
+            | "REQUEST_INITIATED"
+            | "PRE_CHECK_PASSED"
+            | "PRE_CHECK_FAILED"
+            | "GATEWAY_DISPATCH"
+            | "PROVIDER_RESPONSE"
+            | "POST_CHECK_PASSED"
+            | "POST_CHECK_FAILED"
+            | "RECOMMENDATION_PROPOSED"
+            | "FAILURE_CAPTURED";
+          actor_id: string | null;
+          details: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          run_id: string;
+          event_type:
+            | "REQUEST_INITIATED"
+            | "PRE_CHECK_PASSED"
+            | "PRE_CHECK_FAILED"
+            | "GATEWAY_DISPATCH"
+            | "PROVIDER_RESPONSE"
+            | "POST_CHECK_PASSED"
+            | "POST_CHECK_FAILED"
+            | "RECOMMENDATION_PROPOSED"
+            | "FAILURE_CAPTURED";
+          actor_id?: string | null;
+          details?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          run_id?: string;
+          event_type?:
+            | "REQUEST_INITIATED"
+            | "PRE_CHECK_PASSED"
+            | "PRE_CHECK_FAILED"
+            | "GATEWAY_DISPATCH"
+            | "PROVIDER_RESPONSE"
+            | "POST_CHECK_PASSED"
+            | "POST_CHECK_FAILED"
+            | "RECOMMENDATION_PROPOSED"
+            | "FAILURE_CAPTURED";
+          actor_id?: string | null;
+          details?: Json;
+          created_at?: string;
+        };
+      };
     };
   };
 }

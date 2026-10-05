@@ -9,6 +9,7 @@ import {
   getIntelligenceRecommendations,
   getIntelligenceEvaluations,
 } from "@/features/intelligence/queries";
+import { getAIReasoningRuns } from "@/features/intelligence/ai-queries";
 import { IntelligenceOverview } from "@/features/intelligence/components/intelligence-overview";
 import { ArrowLeft } from "lucide-react";
 
@@ -21,13 +22,14 @@ export const metadata: Metadata = {
 export default async function AdminIntelligencePage() {
   await requireRole("ADMIN");
 
-  const [agents, signals, observations, recommendations, evaluations] =
+  const [agents, signals, observations, recommendations, evaluations, reasoningRuns] =
     await Promise.all([
       getIntelligenceAgents(),
       getIntelligenceSignals(),
       getIntelligenceObservations(),
       getIntelligenceRecommendations(),
       getIntelligenceEvaluations(),
+      getAIReasoningRuns(),
     ]);
 
   return (
@@ -58,6 +60,7 @@ export default async function AdminIntelligencePage() {
           observations={observations}
           recommendations={recommendations}
           evaluations={evaluations}
+          reasoningRuns={reasoningRuns}
         />
       </div>
     </div>

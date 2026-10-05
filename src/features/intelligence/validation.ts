@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NIGERIAN_STATES } from "@/features/marketplace/constants";
+export { NIGERIAN_STATES };
 
 /**
  * Strict Anti-Pork content validator for Agricultural Intelligence.
@@ -19,6 +20,16 @@ export function assertNoProhibitedProduce(text: string, fieldName = "Field"): vo
       `${fieldName} contains prohibited produce terms. AgroMarket strictly forbids pig/pork/swine commodities throughout the entire ecosystem.`
     );
   }
+}
+
+export function validateNigerianState(state: string): string {
+  const match = (NIGERIAN_STATES as readonly string[]).find(
+    (s) => s.toLowerCase() === state.trim().toLowerCase()
+  );
+  if (!match) {
+    throw new Error(`'${state}' is not a recognized Nigerian state.`);
+  }
+  return match;
 }
 
 export const evidenceSourceTypeSchema = z.enum([
