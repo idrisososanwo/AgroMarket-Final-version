@@ -94,6 +94,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {agent.id.includes("DEMAND") && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-blue-700 font-medium">Phase 2.5 Activated</span>
+                <a
+                  href="/demand-intelligence"
+                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 underline"
+                >
+                  Open Demand Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>

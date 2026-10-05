@@ -74,6 +74,9 @@ export const intelligenceSignalTypeSchema = z.enum([
   "SECURITY_DISRUPTION",
   "DISEASE_RISK",
   "SEASONAL_DEMAND",
+  "DEMAND_VOLATILITY",
+  "UNMET_DEMAND",
+  "B2B_DEMAND_INCREASE",
 ]);
 
 export const intelligenceSignalSchema = z.object({
