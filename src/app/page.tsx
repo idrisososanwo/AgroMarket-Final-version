@@ -25,10 +25,16 @@ export default function HomePage() {
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
-              href="/marketplace"
-              className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition"
+              href="/ecosystem"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-800 transition"
             >
-              Browse Produce Marketplace &rarr;
+              Agricultural Ecosystem & Value Chains &rarr;
+            </Link>
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50 transition"
+            >
+              Browse Marketplace
             </Link>
             <Link
               href="/market"

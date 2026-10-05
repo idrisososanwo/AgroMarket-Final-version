@@ -1676,6 +1676,561 @@ export interface Database {
           created_at?: string;
         };
       };
+      ecosystem_actors: {
+        Row: {
+          id: string;
+          user_id: string;
+          business_profile_id: string | null;
+          actor_type: string;
+          display_name: string;
+          description: string | null;
+          capabilities: string[];
+          state: string;
+          lga: string;
+          verification_status: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "OFFICIAL";
+          is_active: boolean;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          business_profile_id?: string | null;
+          actor_type: string;
+          display_name: string;
+          description?: string | null;
+          capabilities?: string[];
+          state: string;
+          lga: string;
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "OFFICIAL";
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          business_profile_id?: string | null;
+          actor_type?: string;
+          display_name?: string;
+          description?: string | null;
+          capabilities?: string[];
+          state?: string;
+          lga?: string;
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "OFFICIAL";
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      production_units: {
+        Row: {
+          id: string;
+          owner_id: string;
+          business_profile_id: string | null;
+          name: string;
+          unit_type: string;
+          state: string;
+          lga: string;
+          general_area: string | null;
+          commodities: string[];
+          capacity_value: number | null;
+          capacity_unit: string | null;
+          status: "ACTIVE" | "INACTIVE" | "FALLOW" | "MAINTENANCE" | "DECOMMISSIONED";
+          verification_status: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_public: boolean;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          business_profile_id?: string | null;
+          name: string;
+          unit_type: string;
+          state: string;
+          lga: string;
+          general_area?: string | null;
+          commodities?: string[];
+          capacity_value?: number | null;
+          capacity_unit?: string | null;
+          status?: "ACTIVE" | "INACTIVE" | "FALLOW" | "MAINTENANCE" | "DECOMMISSIONED";
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_public?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          business_profile_id?: string | null;
+          name?: string;
+          unit_type?: string;
+          state?: string;
+          lga?: string;
+          general_area?: string | null;
+          commodities?: string[];
+          capacity_value?: number | null;
+          capacity_unit?: string | null;
+          status?: "ACTIVE" | "INACTIVE" | "FALLOW" | "MAINTENANCE" | "DECOMMISSIONED";
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_public?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      production_outputs: {
+        Row: {
+          id: string;
+          production_unit_id: string | null;
+          producer_id: string;
+          commodity_name: string;
+          output_type: string;
+          batch_number: string | null;
+          quantity: number;
+          unit: string;
+          harvest_date: string;
+          quality_grade: "STANDARD" | "PREMIUM" | "GRADE_A" | "GRADE_B" | "COMMERCIAL";
+          status: "AVAILABLE" | "ALLOCATED" | "IN_TRANSIT" | "PROCESSED" | "DEPLETED";
+          state: string;
+          lga: string;
+          notes: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          production_unit_id?: string | null;
+          producer_id: string;
+          commodity_name: string;
+          output_type: string;
+          batch_number?: string | null;
+          quantity: number;
+          unit: string;
+          harvest_date?: string;
+          quality_grade?: "STANDARD" | "PREMIUM" | "GRADE_A" | "GRADE_B" | "COMMERCIAL";
+          status?: "AVAILABLE" | "ALLOCATED" | "IN_TRANSIT" | "PROCESSED" | "DEPLETED";
+          state: string;
+          lga: string;
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          production_unit_id?: string | null;
+          producer_id?: string;
+          commodity_name?: string;
+          output_type?: string;
+          batch_number?: string | null;
+          quantity?: number;
+          unit?: string;
+          harvest_date?: string;
+          quality_grade?: "STANDARD" | "PREMIUM" | "GRADE_A" | "GRADE_B" | "COMMERCIAL";
+          status?: "AVAILABLE" | "ALLOCATED" | "IN_TRANSIT" | "PROCESSED" | "DEPLETED";
+          state?: string;
+          lga?: string;
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      aggregation_pools: {
+        Row: {
+          id: string;
+          aggregator_id: string;
+          title: string;
+          commodity: string;
+          target_quantity: number;
+          current_quantity: number;
+          unit: string;
+          state: string;
+          lga: string;
+          collection_center_name: string | null;
+          expected_availability_date: string;
+          target_buyer_id: string | null;
+          target_processor_id: string | null;
+          status: "OPEN" | "AGGREGATING" | "FULFILLED" | "DISPATCHED" | "CANCELLED" | "CLOSED";
+          notes: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          aggregator_id: string;
+          title: string;
+          commodity: string;
+          target_quantity: number;
+          current_quantity?: number;
+          unit: string;
+          state: string;
+          lga: string;
+          collection_center_name?: string | null;
+          expected_availability_date: string;
+          target_buyer_id?: string | null;
+          target_processor_id?: string | null;
+          status?: "OPEN" | "AGGREGATING" | "FULFILLED" | "DISPATCHED" | "CANCELLED" | "CLOSED";
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          aggregator_id?: string;
+          title?: string;
+          commodity?: string;
+          target_quantity?: number;
+          current_quantity?: number;
+          unit?: string;
+          state?: string;
+          lga?: string;
+          collection_center_name?: string | null;
+          expected_availability_date?: string;
+          target_buyer_id?: string | null;
+          target_processor_id?: string | null;
+          status?: "OPEN" | "AGGREGATING" | "FULFILLED" | "DISPATCHED" | "CANCELLED" | "CLOSED";
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      aggregation_pool_contributions: {
+        Row: {
+          id: string;
+          pool_id: string;
+          supplier_id: string;
+          production_output_id: string | null;
+          quantity: number;
+          unit: string;
+          status: "COMMITTED" | "DELIVERED" | "INSPECTED" | "REJECTED" | "SETTLED";
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          pool_id: string;
+          supplier_id: string;
+          production_output_id?: string | null;
+          quantity: number;
+          unit: string;
+          status?: "COMMITTED" | "DELIVERED" | "INSPECTED" | "REJECTED" | "SETTLED";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          pool_id?: string;
+          supplier_id?: string;
+          production_output_id?: string | null;
+          quantity?: number;
+          unit?: string;
+          status?: "COMMITTED" | "DELIVERED" | "INSPECTED" | "REJECTED" | "SETTLED";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      processing_facilities: {
+        Row: {
+          id: string;
+          operator_id: string;
+          business_profile_id: string | null;
+          name: string;
+          facility_type: string;
+          services_offered: string[];
+          processing_capacity_value: number | null;
+          processing_capacity_unit: string | null;
+          minimum_batch_size: number | null;
+          supported_commodities: string[];
+          state: string;
+          lga: string;
+          general_location: string | null;
+          verification_status: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_active: boolean;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          operator_id: string;
+          business_profile_id?: string | null;
+          name: string;
+          facility_type: string;
+          services_offered?: string[];
+          processing_capacity_value?: number | null;
+          processing_capacity_unit?: string | null;
+          minimum_batch_size?: number | null;
+          supported_commodities?: string[];
+          state: string;
+          lga: string;
+          general_location?: string | null;
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          operator_id?: string;
+          business_profile_id?: string | null;
+          name?: string;
+          facility_type?: string;
+          services_offered?: string[];
+          processing_capacity_value?: number | null;
+          processing_capacity_unit?: string | null;
+          minimum_batch_size?: number | null;
+          supported_commodities?: string[];
+          state?: string;
+          lga?: string;
+          general_location?: string | null;
+          verification_status?: "UNVERIFIED" | "SELF_DECLARED" | "VERIFIED" | "INSPECTED";
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      processing_events: {
+        Row: {
+          id: string;
+          facility_id: string | null;
+          processor_id: string;
+          process_type: string;
+          input_description: string;
+          input_quantity: number;
+          input_unit: string;
+          input_source_output_id: string | null;
+          output_description: string;
+          output_quantity: number;
+          output_unit: string;
+          yield_percentage: number | null;
+          batch_reference: string | null;
+          started_at: string;
+          completed_at: string | null;
+          status: "IN_PROGRESS" | "COMPLETED" | "HALTED" | "REJECTED";
+          resulting_output_id: string | null;
+          resulting_listing_id: string | null;
+          notes: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          facility_id?: string | null;
+          processor_id: string;
+          process_type: string;
+          input_description: string;
+          input_quantity: number;
+          input_unit: string;
+          input_source_output_id?: string | null;
+          output_description: string;
+          output_quantity: number;
+          output_unit: string;
+          yield_percentage?: number | null;
+          batch_reference?: string | null;
+          started_at?: string;
+          completed_at?: string | null;
+          status?: "IN_PROGRESS" | "COMPLETED" | "HALTED" | "REJECTED";
+          resulting_output_id?: string | null;
+          resulting_listing_id?: string | null;
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          facility_id?: string | null;
+          processor_id?: string;
+          process_type?: string;
+          input_description?: string;
+          input_quantity?: number;
+          input_unit?: string;
+          input_source_output_id?: string | null;
+          output_description?: string;
+          output_quantity?: number;
+          output_unit?: string;
+          yield_percentage?: number | null;
+          batch_reference?: string | null;
+          started_at?: string;
+          completed_at?: string | null;
+          status?: "IN_PROGRESS" | "COMPLETED" | "HALTED" | "REJECTED";
+          resulting_output_id?: string | null;
+          resulting_listing_id?: string | null;
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      value_chain_events: {
+        Row: {
+          id: string;
+          event_type:
+            | "PRODUCED"
+            | "HARVESTED"
+            | "AGGREGATED"
+            | "TRANSPORTED"
+            | "RECEIVED"
+            | "PROCESSED"
+            | "INSPECTED"
+            | "PACKAGED"
+            | "STORED"
+            | "DISPATCHED"
+            | "DELIVERED";
+          entity_type:
+            | "PRODUCTION_OUTPUT"
+            | "AGGREGATION_POOL"
+            | "PROCESSING_EVENT"
+            | "B2B_DEMAND"
+            | "MARKETPLACE_LISTING";
+          entity_id: string;
+          actor_id: string;
+          event_title: string;
+          event_details: Json;
+          state: string;
+          lga: string | null;
+          occurred_at: string;
+          recorded_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_type:
+            | "PRODUCED"
+            | "HARVESTED"
+            | "AGGREGATED"
+            | "TRANSPORTED"
+            | "RECEIVED"
+            | "PROCESSED"
+            | "INSPECTED"
+            | "PACKAGED"
+            | "STORED"
+            | "DISPATCHED"
+            | "DELIVERED";
+          entity_type:
+            | "PRODUCTION_OUTPUT"
+            | "AGGREGATION_POOL"
+            | "PROCESSING_EVENT"
+            | "B2B_DEMAND"
+            | "MARKETPLACE_LISTING";
+          entity_id: string;
+          actor_id: string;
+          event_title: string;
+          event_details?: Json;
+          state: string;
+          lga?: string | null;
+          occurred_at?: string;
+          recorded_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_type?:
+            | "PRODUCED"
+            | "HARVESTED"
+            | "AGGREGATED"
+            | "TRANSPORTED"
+            | "RECEIVED"
+            | "PROCESSED"
+            | "INSPECTED"
+            | "PACKAGED"
+            | "STORED"
+            | "DISPATCHED"
+            | "DELIVERED";
+          entity_type?:
+            | "PRODUCTION_OUTPUT"
+            | "AGGREGATION_POOL"
+            | "PROCESSING_EVENT"
+            | "B2B_DEMAND"
+            | "MARKETPLACE_LISTING";
+          entity_id?: string;
+          actor_id?: string;
+          event_title?: string;
+          event_details?: Json;
+          state?: string;
+          lga?: string | null;
+          occurred_at?: string;
+          recorded_at?: string;
+        };
+      };
+      b2b_demands: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          business_profile_id: string | null;
+          title: string;
+          commodity_or_product: string;
+          quantity: number;
+          unit: string;
+          specifications: Json;
+          target_price_per_unit: number | null;
+          state: string;
+          lga: string;
+          desired_delivery_date: string;
+          frequency: "ONE_TIME" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY";
+          status: "ACTIVE" | "MATCHED" | "PARTIALLY_MATCHED" | "FULFILLED" | "EXPIRED" | "CANCELLED";
+          notes: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id: string;
+          business_profile_id?: string | null;
+          title: string;
+          commodity_or_product: string;
+          quantity: number;
+          unit: string;
+          specifications?: Json;
+          target_price_per_unit?: number | null;
+          state: string;
+          lga: string;
+          desired_delivery_date: string;
+          frequency?: "ONE_TIME" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY";
+          status?: "ACTIVE" | "MATCHED" | "PARTIALLY_MATCHED" | "FULFILLED" | "EXPIRED" | "CANCELLED";
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string;
+          business_profile_id?: string | null;
+          title?: string;
+          commodity_or_product?: string;
+          quantity?: number;
+          unit?: string;
+          specifications?: Json;
+          target_price_per_unit?: number | null;
+          state?: string;
+          lga?: string;
+          desired_delivery_date?: string;
+          frequency?: "ONE_TIME" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY";
+          status?: "ACTIVE" | "MATCHED" | "PARTIALLY_MATCHED" | "FULFILLED" | "EXPIRED" | "CANCELLED";
+          notes?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
