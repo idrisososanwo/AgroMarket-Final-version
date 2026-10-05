@@ -1,0 +1,78 @@
+"use client";
+
+import { IntelligenceAgent } from "../types";
+import { Cpu, CheckCircle2, AlertCircle } from "lucide-react";
+
+interface AgentsRegistryCardProps {
+  agents: IntelligenceAgent[];
+}
+
+export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-neutral-900">
+            Ecosystem Intelligence Agents Registry
+          </h2>
+          <p className="text-xs text-neutral-500">
+            Multi-agent architecture consuming common deterministic signals and data layers.
+          </p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          {agents.length} Registered
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {agents.map((agent) => (
+          <div
+            key={agent.id}
+            className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-emerald-500"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <Cpu className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-neutral-900">{agent.name}</h3>
+                  <span className="text-[10px] text-neutral-400 font-mono">v{agent.version}</span>
+                </div>
+              </div>
+              {agent.status === "ACTIVE" ? (
+                <span className="inline-flex items-center text-[10px] font-semibold text-emerald-700">
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center text-[10px] font-semibold text-amber-700">
+                  <AlertCircle className="mr-1 h-3 w-3" /> {agent.status}
+                </span>
+              )}
+            </div>
+
+            <p className="mt-2 text-xs text-neutral-600 line-clamp-2">
+              {agent.description}
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-1">
+              {agent.capabilities.slice(0, 3).map((cap) => (
+                <span
+                  key={cap}
+                  className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-medium text-neutral-700"
+                >
+                  {cap.replace(/_/g, " ")}
+                </span>
+              ))}
+              {agent.capabilities.length > 3 && (
+                <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-medium text-neutral-500">
+                  +{agent.capabilities.length - 3} more
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
