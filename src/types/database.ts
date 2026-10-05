@@ -2800,6 +2800,59 @@ export interface Database {
           created_at?: string;
         };
       };
+      market_pressure_snapshots: {
+        Row: {
+          id: string;
+          commodity: string;
+          state: string;
+          pressure_score: number;
+          pressure_level: "LOW" | "MODERATE" | "ELEVATED" | "ACUTE" | "CRITICAL";
+          price_pressure: number;
+          supply_pressure: number;
+          demand_pressure: number;
+          disruption_pressure: number;
+          confidence: number;
+          drivers: string[];
+          risks: string[];
+          evidence_count: number;
+          metadata: Json;
+          calculated_at: string;
+        };
+        Insert: {
+          id?: string;
+          commodity: string;
+          state: string;
+          pressure_score: number;
+          pressure_level: "LOW" | "MODERATE" | "ELEVATED" | "ACUTE" | "CRITICAL";
+          price_pressure?: number;
+          supply_pressure?: number;
+          demand_pressure?: number;
+          disruption_pressure?: number;
+          confidence?: number;
+          drivers?: string[];
+          risks?: string[];
+          evidence_count?: number;
+          metadata?: Json;
+          calculated_at?: string;
+        };
+        Update: {
+          id?: string;
+          commodity?: string;
+          state?: string;
+          pressure_score?: number;
+          pressure_level?: "LOW" | "MODERATE" | "ELEVATED" | "ACUTE" | "CRITICAL";
+          price_pressure?: number;
+          supply_pressure?: number;
+          demand_pressure?: number;
+          disruption_pressure?: number;
+          confidence?: number;
+          drivers?: string[];
+          risks?: string[];
+          evidence_count?: number;
+          metadata?: Json;
+          calculated_at?: string;
+        };
+      };
     };
   };
 }
