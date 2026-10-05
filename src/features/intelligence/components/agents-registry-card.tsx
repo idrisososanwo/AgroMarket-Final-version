@@ -82,6 +82,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {agent.id.includes("PRODUCTION") && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-emerald-700 font-medium">Phase 2.4 Activated</span>
+                <a
+                  href="/production-intelligence"
+                  className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-800 underline"
+                >
+                  Open Planning Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>
