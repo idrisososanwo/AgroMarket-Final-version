@@ -172,6 +172,11 @@ export const recommendationObjectiveSchema = z.enum([
   "SUPPLY_COORDINATION",
   "AGGREGATION_COORDINATION",
   "PROCESSING_COORDINATION",
+  "PROCUREMENT_COORDINATION",
+  "PROCUREMENT_STRATEGY",
+  "SUPPLIER_DIVERSIFICATION",
+  "PROCUREMENT_RISK",
+  "B2B_PROCUREMENT",
 ]);
 
 export const recommendationStatusSchema = z.enum([

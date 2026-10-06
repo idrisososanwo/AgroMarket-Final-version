@@ -118,6 +118,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {agent.id.includes("PROCUREMENT") && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-amber-700 font-medium">Phase 2.7 Activated</span>
+                <a
+                  href="/procurement-intelligence"
+                  className="text-[10px] font-semibold text-amber-600 hover:text-amber-800 underline"
+                >
+                  Open Procurement Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>
