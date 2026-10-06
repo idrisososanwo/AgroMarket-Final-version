@@ -142,6 +142,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {agent.id.includes("LOGISTICS") && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-indigo-700 font-medium">Phase 2.9 Activated</span>
+                <a
+                  href="/logistics-intelligence"
+                  className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 underline"
+                >
+                  Open Logistics Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>
