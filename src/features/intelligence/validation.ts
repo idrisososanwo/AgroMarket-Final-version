@@ -45,6 +45,8 @@ export const evidenceSourceTypeSchema = z.enum([
   "KNOWLEDGE_BULLETIN",
   "EQUIPMENT_ACTIVITY",
   "SEASONAL_CALENDAR",
+  "FOOD_SECURITY_SNAPSHOT",
+  "RESILIENCE_ASSESSMENT",
 ]);
 
 export const intelligenceEvidenceSchema = z.object({
@@ -77,6 +79,18 @@ export const intelligenceSignalTypeSchema = z.enum([
   "DEMAND_VOLATILITY",
   "UNMET_DEMAND",
   "B2B_DEMAND_INCREASE",
+  "FOOD_SECURITY_PRESSURE_INCREASE",
+  "FOOD_SECURITY_PRESSURE_DECREASE",
+  "REGIONAL_SUPPLY_STRESS",
+  "COMMODITY_SUPPLY_STRESS",
+  "FOOD_AFFORDABILITY_PRESSURE",
+  "FOOD_AVAILABILITY_PRESSURE",
+  "FOOD_ACCESS_PRESSURE",
+  "FOOD_STABILITY_RISK",
+  "AGRICULTURAL_RESILIENCE_RISK",
+  "CRITICAL_DEPENDENCY",
+  "SUPPLY_CORRIDOR_DEPENDENCY",
+  "FOOD_SECURITY_ALERT",
 ]);
 
 export const intelligenceSignalSchema = z.object({
@@ -120,6 +134,8 @@ export const observationDomainSourceSchema = z.enum([
   "KNOWLEDGE",
   "EQUIPMENT",
   "VALUE_CHAIN",
+  "FOOD_SECURITY",
+  "RESILIENCE",
 ]);
 
 export const intelligenceObservationSchema = z.object({
@@ -177,6 +193,11 @@ export const recommendationObjectiveSchema = z.enum([
   "SUPPLIER_DIVERSIFICATION",
   "PROCUREMENT_RISK",
   "B2B_PROCUREMENT",
+  "FOOD_SECURITY_INTERVENTION",
+  "RESILIENCE_STRENGTHENING",
+  "CORRIDOR_PROTECTION",
+  "SUPPLY_RESERVE_RELEASE",
+  "CRITICAL_DEPENDENCY_MITIGATION",
 ]);
 
 export const recommendationStatusSchema = z.enum([

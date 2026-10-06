@@ -130,6 +130,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {(agent.id.includes("FOOD_SECURITY") || agent.id.includes("RESILIENCE")) && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-red-700 font-medium">Phase 2.8 Activated</span>
+                <a
+                  href="/food-security"
+                  className="text-[10px] font-semibold text-red-600 hover:text-red-800 underline"
+                >
+                  Open Food Security Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>
