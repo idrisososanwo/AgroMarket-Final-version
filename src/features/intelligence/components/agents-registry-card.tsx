@@ -24,8 +24,38 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
         </span>
       </div>
 
+      {/* Primary Cross-Domain Orchestrator Layer Banner */}
+      <div className="rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50/80 to-purple-50/50 p-5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+              <Cpu className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-sm font-black text-neutral-900">
+                  Agricultural Intelligence Orchestrator
+                </h3>
+                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[9px] font-black uppercase text-indigo-800">
+                  ORCHESTRATION_LAYER
+                </span>
+              </div>
+              <p className="text-xs text-neutral-600 mt-0.5">
+                Cross-domain coordination engine synthesizing Market, Production, Demand, Supply, Procurement, Food Security, Logistics, and Biosecurity intelligence.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/intelligence"
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-700 px-3.5 py-2 text-xs font-bold text-white shadow hover:bg-indigo-800 transition whitespace-nowrap"
+          >
+            Open Primary Command Center &rarr;
+          </a>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {agents.map((agent) => (
+        {agents.filter((a) => a.id !== "AGRICULTURAL_INTELLIGENCE_ORCHESTRATOR").map((agent) => (
           <div
             key={agent.id}
             className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-emerald-500"

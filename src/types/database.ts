@@ -4162,6 +4162,287 @@ export interface Database {
           updated_at?: string;
         };
       };
+      agricultural_orchestration_snapshots: {
+        Row: {
+          id: string;
+          scenario_type:
+            | "SUPPLY_SHORTAGE_SCENARIO"
+            | "DISEASE_SUPPLY_RISK_SCENARIO"
+            | "LOGISTICS_CONSTRAINED_SUPPLY_SCENARIO"
+            | "PROCUREMENT_RISK_SCENARIO"
+            | "FOOD_SECURITY_PRESSURE_SCENARIO"
+            | "MULTI_DOMAIN_RISK_SCENARIO"
+            | "BALANCED_NOMINAL_SCENARIO";
+          priority_score: number;
+          priority_level: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          orchestration_confidence: number;
+          domain_score: number;
+          evidence_confidence: number;
+          geographic_scope: string | null;
+          state: string | null;
+          lga: string | null;
+          geopolitical_zone: string | null;
+          commodity: string | null;
+          commodity_category: string | null;
+          affected_domains: string[];
+          contributing_agents: string[];
+          contributing_signals: Json;
+          scenario_summary: string;
+          deterministic_findings: Json;
+          conflict_detected: boolean;
+          conflict_details: Json | null;
+          evidence_summary: string;
+          component_breakdown: Json;
+          generated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          scenario_type:
+            | "SUPPLY_SHORTAGE_SCENARIO"
+            | "DISEASE_SUPPLY_RISK_SCENARIO"
+            | "LOGISTICS_CONSTRAINED_SUPPLY_SCENARIO"
+            | "PROCUREMENT_RISK_SCENARIO"
+            | "FOOD_SECURITY_PRESSURE_SCENARIO"
+            | "MULTI_DOMAIN_RISK_SCENARIO"
+            | "BALANCED_NOMINAL_SCENARIO";
+          priority_score: number;
+          priority_level: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          orchestration_confidence: number;
+          domain_score: number;
+          evidence_confidence: number;
+          geographic_scope?: string | null;
+          state?: string | null;
+          lga?: string | null;
+          geopolitical_zone?: string | null;
+          commodity?: string | null;
+          commodity_category?: string | null;
+          affected_domains?: string[];
+          contributing_agents?: string[];
+          contributing_signals?: Json;
+          scenario_summary: string;
+          deterministic_findings?: Json;
+          conflict_detected?: boolean;
+          conflict_details?: Json | null;
+          evidence_summary: string;
+          component_breakdown?: Json;
+          generated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          scenario_type?:
+            | "SUPPLY_SHORTAGE_SCENARIO"
+            | "DISEASE_SUPPLY_RISK_SCENARIO"
+            | "LOGISTICS_CONSTRAINED_SUPPLY_SCENARIO"
+            | "PROCUREMENT_RISK_SCENARIO"
+            | "FOOD_SECURITY_PRESSURE_SCENARIO"
+            | "MULTI_DOMAIN_RISK_SCENARIO"
+            | "BALANCED_NOMINAL_SCENARIO";
+          priority_score?: number;
+          priority_level?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          orchestration_confidence?: number;
+          domain_score?: number;
+          evidence_confidence?: number;
+          geographic_scope?: string | null;
+          state?: string | null;
+          lga?: string | null;
+          geopolitical_zone?: string | null;
+          commodity?: string | null;
+          commodity_category?: string | null;
+          affected_domains?: string[];
+          contributing_agents?: string[];
+          contributing_signals?: Json;
+          scenario_summary?: string;
+          deterministic_findings?: Json;
+          conflict_detected?: boolean;
+          conflict_details?: Json | null;
+          evidence_summary?: string;
+          component_breakdown?: Json;
+          generated_at?: string;
+          created_at?: string;
+        };
+      };
+      agricultural_orchestration_recommendations: {
+        Row: {
+          id: string;
+          snapshot_id: string | null;
+          title: string;
+          summary: string;
+          action_path: string;
+          priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          confidence: number;
+          affected_domains: string[];
+          affected_commodities: string[];
+          affected_states: string[];
+          status: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          advisory_disclaimer: string;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          review_notes: string | null;
+          outcome_id: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          snapshot_id?: string | null;
+          title: string;
+          summary: string;
+          action_path: string;
+          priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          confidence: number;
+          affected_domains?: string[];
+          affected_commodities?: string[];
+          affected_states?: string[];
+          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          advisory_disclaimer?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_notes?: string | null;
+          outcome_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          snapshot_id?: string | null;
+          title?: string;
+          summary?: string;
+          action_path?: string;
+          priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          confidence?: number;
+          affected_domains?: string[];
+          affected_commodities?: string[];
+          affected_states?: string[];
+          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          advisory_disclaimer?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_notes?: string | null;
+          outcome_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agricultural_intelligence_conflicts: {
+        Row: {
+          id: string;
+          snapshot_id: string | null;
+          conflict_type: string;
+          domain_a: string;
+          domain_b: string;
+          signal_a: string;
+          signal_b: string;
+          state: string | null;
+          lga: string | null;
+          commodity: string | null;
+          severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          status: "ACTIVE" | "INVESTIGATING" | "RESOLVED" | "DISMISSED";
+          explanation: string;
+          confidence_impact: number;
+          recommended_human_review: string;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          resolution_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          snapshot_id?: string | null;
+          conflict_type: string;
+          domain_a: string;
+          domain_b: string;
+          signal_a: string;
+          signal_b: string;
+          state?: string | null;
+          lga?: string | null;
+          commodity?: string | null;
+          severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          status?: "ACTIVE" | "INVESTIGATING" | "RESOLVED" | "DISMISSED";
+          explanation: string;
+          confidence_impact?: number;
+          recommended_human_review: string;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+          resolution_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          snapshot_id?: string | null;
+          conflict_type?: string;
+          domain_a?: string;
+          domain_b?: string;
+          signal_a?: string;
+          signal_b?: string;
+          state?: string | null;
+          lga?: string | null;
+          commodity?: string | null;
+          severity?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+          status?: "ACTIVE" | "INVESTIGATING" | "RESOLVED" | "DISMISSED";
+          explanation?: string;
+          confidence_impact?: number;
+          recommended_human_review?: string;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+          resolution_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agricultural_orchestration_outcomes: {
+        Row: {
+          id: string;
+          recommendation_id: string;
+          decision: string;
+          action_taken: string;
+          action_time: string;
+          observed_outcome: string;
+          expected_outcome: string;
+          variance: string;
+          evaluation_score: number;
+          lessons_learned: string;
+          recorded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          recommendation_id: string;
+          decision: string;
+          action_taken: string;
+          action_time?: string;
+          observed_outcome: string;
+          expected_outcome: string;
+          variance: string;
+          evaluation_score: number;
+          lessons_learned: string;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          recommendation_id?: string;
+          decision?: string;
+          action_taken?: string;
+          action_time?: string;
+          observed_outcome?: string;
+          expected_outcome?: string;
+          variance?: string;
+          evaluation_score?: number;
+          lessons_learned?: string;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

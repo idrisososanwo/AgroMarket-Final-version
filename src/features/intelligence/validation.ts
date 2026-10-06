@@ -55,6 +55,9 @@ export const evidenceSourceTypeSchema = z.enum([
   "BIOSECURITY_ADVISORY",
   "VETERINARY_REPORT",
   "SURVEILLANCE_NOTICE",
+  "ORCHESTRATION_SNAPSHOT",
+  "CROSS_DOMAIN_SIGNAL",
+  "INTELLIGENCE_CONFLICT",
 ]);
 
 export const intelligenceEvidenceSchema = z.object({
@@ -128,6 +131,11 @@ export const intelligenceSignalTypeSchema = z.enum([
   "DISEASE_RISK_UNCERTAINTY",
   "DISEASE_SUPPLY_IMPACT",
   "DISEASE_FOOD_SECURITY_RISK",
+  "CROSS_DOMAIN_RISK",
+  "MULTI_DOMAIN_RISK",
+  "INTELLIGENCE_CONFLICT",
+  "CROSS_DOMAIN_SUPPLY_GAP",
+  "CROSS_DOMAIN_BOTTLENECK",
 ]);
 
 export const intelligenceSignalSchema = z.object({
@@ -173,6 +181,9 @@ export const observationDomainSourceSchema = z.enum([
   "VALUE_CHAIN",
   "FOOD_SECURITY",
   "RESILIENCE",
+  "BIOSECURITY",
+  "DISEASE",
+  "ORCHESTRATION",
 ]);
 
 export const intelligenceObservationSchema = z.object({
@@ -249,6 +260,12 @@ export const recommendationObjectiveSchema = z.enum([
   "FEED_WATER_QUALITY_INSPECTION",
   "HARVEST_QUARANTINE_MONITORING",
   "DISEASE_SURVEILLANCE_VERIFICATION",
+  "CROSS_DOMAIN_ORCHESTRATION",
+  "MULTI_DOMAIN_RISK_MITIGATION",
+  "SUPPLY_SHORTAGE_RESPONSE",
+  "DISEASE_SUPPLY_HEDGING",
+  "LOGISTICS_CONSTRAINED_REROUTING",
+  "PROCUREMENT_RISK_DIVERSIFICATION",
 ]);
 
 export const recommendationStatusSchema = z.enum([
