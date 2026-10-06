@@ -45,12 +45,17 @@ const UNIT_REGISTRY: Record<string, UnitDefinition> = {
   "100kg_bag": { family: "MASS", canonicalUnit: "KG", multiplier: 100 },
   "bag_100kg": { family: "MASS", canonicalUnit: "KG", multiplier: 100 },
   "tonne": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
+  "tonnes": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
+  "ton": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
+  "tons": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
   "tonne (mt)": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
   "mt": { family: "MASS", canonicalUnit: "KG", multiplier: 1000 },
 
   // Volume-based units (canonical: LITRE)
   "litre": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 1 },
+  "litres": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 1 },
   "liter": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 1 },
+  "liters": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 1 },
   "l": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 1 },
   "gallon (25l)": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 25 },
   "25l_keg": { family: "VOLUME", canonicalUnit: "LITRE", multiplier: 25 },

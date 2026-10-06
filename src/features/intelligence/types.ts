@@ -55,7 +55,10 @@ export type RecommendationObjective =
   | "RISK_MITIGATION"
   | "FACILITY_OFFTAKE"
   | "DEMAND_FULFILLMENT"
-  | "SECURITY_ADVISORY";
+  | "SECURITY_ADVISORY"
+  | "SUPPLY_COORDINATION"
+  | "AGGREGATION_COORDINATION"
+  | "PROCESSING_COORDINATION";
 
 export type RecommendationStatus =
   | "PROPOSED"

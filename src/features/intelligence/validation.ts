@@ -169,6 +169,9 @@ export const recommendationObjectiveSchema = z.enum([
   "FACILITY_OFFTAKE",
   "DEMAND_FULFILLMENT",
   "SECURITY_ADVISORY",
+  "SUPPLY_COORDINATION",
+  "AGGREGATION_COORDINATION",
+  "PROCESSING_COORDINATION",
 ]);
 
 export const recommendationStatusSchema = z.enum([
