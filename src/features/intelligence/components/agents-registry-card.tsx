@@ -154,6 +154,18 @@ export function AgentsRegistryCard({ agents }: AgentsRegistryCardProps) {
                 </a>
               </div>
             )}
+
+            {(agent.id.includes("DISEASE") || agent.id.includes("BIOSECURITY")) && (
+              <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] text-rose-700 font-medium">Phase 3.0 Activated</span>
+                <a
+                  href="/disease-intelligence"
+                  className="text-[10px] font-semibold text-rose-600 hover:text-rose-800 underline"
+                >
+                  Open Biosecurity Console &rarr;
+                </a>
+              </div>
+            )}
           </div>
         ))}
       </div>
