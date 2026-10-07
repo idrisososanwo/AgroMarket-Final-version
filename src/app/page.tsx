@@ -99,6 +99,12 @@ export default function HomePage() {
             >
               Account & Profile
             </Link>
+            <Link
+              href="/design-system"
+              className="inline-flex items-center justify-center rounded-lg border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-2.5 text-sm font-semibold text-[#0F4327] hover:bg-[#DCFCE7] transition"
+            >
+              Design System Showcase &rarr;
+            </Link>
           </div>
         </div>
 

@@ -33,6 +33,52 @@
     --ring: 142 76% 36%;
 
     --radius: 0.625rem;
+
+    /* AgroMarket Official Brand Palette */
+    --agro-green-950: #082615;
+    --agro-green-900: #0f4327; /* Deep Agricultural Green (Primary) */
+    --agro-green-800: #14532d;
+    --agro-green-700: #166534;
+    --agro-green-600: #15803d;
+    --agro-green-500: #16a34a; /* Fresh Growth Green (Secondary) */
+    --agro-green-400: #22c55e;
+    --agro-green-300: #86efac;
+    --agro-green-200: #bbf7d0;
+    --agro-green-100: #dcfce7;
+    --agro-green-50: #f0fdf4;
+
+    --agro-growth: #16a34a;
+    --agro-clay: #c26732;       /* Warm Earth Clay (Supporting) */
+    --agro-clay-light: #fbece5;
+    --agro-clay-dark: #9a3412;
+    --agro-amber: #e59500;      /* Amber Gold (Accent & Intelligence) */
+    --agro-amber-light: #fef3c7;
+    --agro-amber-dark: #b45309;
+
+    /* Neutrals & Surfaces */
+    --agro-cream: #fbf9f4;      /* Organic Cream */
+    --agro-white: #ffffff;
+    --agro-charcoal: #1a231e;   /* Deep Slate Charcoal */
+    --agro-surface-muted: #f4f1ea;
+    --agro-border: #e6e1d6;
+    --agro-border-subtle: #f0ece3;
+
+    /* Semantic Feedback */
+    --agro-success: #15803d;
+    --agro-success-bg: #f0fdf4;
+    --agro-success-border: #bbf7d0;
+
+    --agro-warning: #d97706;
+    --agro-warning-bg: #fffbeb;
+    --agro-warning-border: #fde68a;
+
+    --agro-danger: #dc2626;
+    --agro-danger-bg: #fef2f2;
+    --agro-danger-border: #fecaca;
+
+    --agro-info: #0284c7;
+    --agro-info-bg: #f0f9ff;
+    --agro-info-border: #bae6fd;
   }
 
   .dark {
