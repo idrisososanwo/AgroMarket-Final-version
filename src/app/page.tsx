@@ -1,16 +1,25 @@
 import Link from "next/link";
 import { CheckCircle2, Server, Shield, Layers, ArrowRight } from "lucide-react";
+import { AgroMarketLogo } from "@/components/brand";
 
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center p-6 md:p-12">
       <div className="w-full max-w-4xl space-y-8">
-        {/* Header Badge */}
-        <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-800">
-            Phase 0.1 Foundation Active
-          </span>
-          <span className="text-xs text-muted-foreground">Version 0.1.0</span>
+        {/* Brand Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
+          <AgroMarketLogo
+            size="lg"
+            showTagline
+            taglineText="NIGERIAN AGRICULTURAL NETWORK"
+            href="/"
+          />
+          <div className="flex items-center space-x-2">
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+              Ecosystem Active
+            </span>
+            <span className="text-xs text-muted-foreground">Version 0.1.0</span>
+          </div>
         </div>
 
         {/* Title */}

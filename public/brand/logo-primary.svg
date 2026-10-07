@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" fill="none" role="img" aria-label="AgroMarket Primary Logo">
+  <!-- AgroMarket Primary Stacked Logo -->
+  <!-- Centered Symbol (100x100 box centered at x=70, y=10) -->
+  <g transform="translate(70, 10)">
+    <!-- Network Pathways -->
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 22 82 L 28 50 L 50 18" stroke="#0F4327" stroke-width="7" />
+      <path d="M 78 82 L 72 50 L 50 18" stroke="#0F4327" stroke-width="7" />
+      <path d="M 28 50 L 72 50" stroke="#C26732" stroke-width="6.5" />
+      <path d="M 50 76 L 50 18" stroke="#16A34A" stroke-width="6" />
+      <path d="M 22 82 L 50 76 L 78 82" stroke="#0F4327" stroke-width="5.5" opacity="0.85" />
+    </g>
+
+    <!-- Network Nodes -->
+    <circle cx="22" cy="82" r="7" fill="#0F4327" />
+    <circle cx="22" cy="82" r="2.8" fill="#FBF9F4" />
+    <circle cx="78" cy="82" r="7" fill="#0F4327" />
+    <circle cx="78" cy="82" r="2.8" fill="#FBF9F4" />
+    <circle cx="50" cy="76" r="6" fill="#16A34A" />
+    <circle cx="50" cy="76" r="2.4" fill="#FBF9F4" />
+    <circle cx="28" cy="50" r="6.5" fill="#C26732" />
+    <circle cx="28" cy="50" r="2.5" fill="#FBF9F4" />
+    <circle cx="72" cy="50" r="6.5" fill="#C26732" />
+    <circle cx="72" cy="50" r="2.5" fill="#FBF9F4" />
+    <circle cx="50" cy="50" r="6" fill="#E59500" />
+    <circle cx="50" cy="50" r="2.4" fill="#FBF9F4" />
+    <circle cx="50" cy="18" r="8" fill="#16A34A" />
+    <circle cx="50" cy="18" r="3.2" fill="#FBF9F4" />
+  </g>
+
+  <!-- Wordmark Section Centered -->
+  <text x="120" y="145" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="800" letter-spacing="-0.5px">
+    <tspan fill="#0F4327">Agro</tspan><tspan fill="#16A34A">Market</tspan>
+  </text>
+  <text x="120" y="168" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="600" fill="#64748B" letter-spacing="2px">
+    NIGERIAN AGRICULTURAL NETWORK
+  </text>
+</svg>

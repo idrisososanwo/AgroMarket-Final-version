@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="AgroMarket Favicon">
+  <!-- Favicon: High-contrast 32x32 optimized Agro Network mark -->
+  <rect width="32" height="32" rx="7" fill="#0F4327" />
+  
+  <!-- Network Conduits -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer A-Frame -->
+    <path d="M 8 25 L 10 16 L 16 7 L 22 16 L 24 25" stroke="#FFFFFF" stroke-width="2.2" />
+    <!-- Horizontal Crossbar -->
+    <path d="M 10 16 L 22 16" stroke="#C26732" stroke-width="2" />
+    <!-- Central Stem -->
+    <path d="M 16 23 L 16 7" stroke="#22C55E" stroke-width="2" />
+  </g>
+
+  <!-- Network Nodes -->
+  <!-- Base Nodes -->
+  <circle cx="8" cy="25" r="2.2" fill="#FFFFFF" />
+  <circle cx="24" cy="25" r="2.2" fill="#FFFFFF" />
+  <circle cx="16" cy="23" r="1.8" fill="#22C55E" />
+  
+  <!-- Mid Nodes -->
+  <circle cx="10" cy="16" r="2" fill="#C26732" />
+  <circle cx="22" cy="16" r="2" fill="#C26732" />
+  <circle cx="16" cy="16" r="1.8" fill="#E59500" />
+  
+  <!-- Apex Node -->
+  <circle cx="16" cy="7" r="2.5" fill="#22C55E" />
+</svg>

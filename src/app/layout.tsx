@@ -27,10 +27,19 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  icons: {
+    icon: [
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+      { url: "/brand/symbol.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/brand/app-icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#15803d",
+  themeColor: "#0F4327",
   width: "device-width",
   initialScale: 1,
 };
