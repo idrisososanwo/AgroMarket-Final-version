@@ -1611,6 +1611,9 @@ export interface Database {
           action_url: string | null;
           is_read: boolean;
           read_at: string | null;
+          severity: string | null;
+          expires_at: string | null;
+          metadata: Json | null;
           created_at: string;
         };
         Insert: {
@@ -1623,6 +1626,9 @@ export interface Database {
           action_url?: string | null;
           is_read?: boolean;
           read_at?: string | null;
+          severity?: string | null;
+          expires_at?: string | null;
+          metadata?: Json | null;
           created_at?: string;
         };
         Update: {
@@ -1635,6 +1641,9 @@ export interface Database {
           action_url?: string | null;
           is_read?: boolean;
           read_at?: string | null;
+          severity?: string | null;
+          expires_at?: string | null;
+          metadata?: Json | null;
           created_at?: string;
         };
       };
@@ -4275,13 +4284,19 @@ export interface Database {
           affected_domains: string[];
           affected_commodities: string[];
           affected_states: string[];
-          status: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          status: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED" | "EXPIRED";
           advisory_disclaimer: string;
           reviewed_by: string | null;
           reviewed_at: string | null;
           review_notes: string | null;
           outcome_id: string | null;
           metadata: Json;
+          recommendation_type: string | null;
+          affected_actor: string | null;
+          urgency: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | null;
+          rationale: string | null;
+          limitations: string | null;
+          expires_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -4296,13 +4311,19 @@ export interface Database {
           affected_domains?: string[];
           affected_commodities?: string[];
           affected_states?: string[];
-          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED" | "EXPIRED";
           advisory_disclaimer?: string;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           review_notes?: string | null;
           outcome_id?: string | null;
           metadata?: Json;
+          recommendation_type?: string | null;
+          affected_actor?: string | null;
+          urgency?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | null;
+          rationale?: string | null;
+          limitations?: string | null;
+          expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -4317,13 +4338,19 @@ export interface Database {
           affected_domains?: string[];
           affected_commodities?: string[];
           affected_states?: string[];
-          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED";
+          status?: "PROPOSED" | "REVIEWED" | "ACCEPTED" | "REJECTED" | "ACTIONED" | "COMPLETED" | "EXPIRED";
           advisory_disclaimer?: string;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           review_notes?: string | null;
           outcome_id?: string | null;
           metadata?: Json;
+          recommendation_type?: string | null;
+          affected_actor?: string | null;
+          urgency?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | null;
+          rationale?: string | null;
+          limitations?: string | null;
+          expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -4443,6 +4470,246 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_intelligence_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          primary_role:
+            | "FARMER"
+            | "BUYER"
+            | "BUSINESS"
+            | "SERVICE_PROVIDER"
+            | "EQUIPMENT_OWNER"
+            | "EXPERT"
+            | "ADMIN"
+            | "JOB_SEEKER";
+          preferred_states: string[];
+          preferred_lgas: string[];
+          monitored_commodities: string[];
+          urgency_threshold: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+          min_confidence: number;
+          notification_channels: string[];
+          digest_frequency: "REALTIME" | "DAILY" | "WEEKLY" | "MUTED";
+          muted_recommendation_types: string[];
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          primary_role?:
+            | "FARMER"
+            | "BUYER"
+            | "BUSINESS"
+            | "SERVICE_PROVIDER"
+            | "EQUIPMENT_OWNER"
+            | "EXPERT"
+            | "ADMIN"
+            | "JOB_SEEKER";
+          preferred_states?: string[];
+          preferred_lgas?: string[];
+          monitored_commodities?: string[];
+          urgency_threshold?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+          min_confidence?: number;
+          notification_channels?: string[];
+          digest_frequency?: "REALTIME" | "DAILY" | "WEEKLY" | "MUTED";
+          muted_recommendation_types?: string[];
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          primary_role?:
+            | "FARMER"
+            | "BUYER"
+            | "BUSINESS"
+            | "SERVICE_PROVIDER"
+            | "EQUIPMENT_OWNER"
+            | "EXPERT"
+            | "ADMIN"
+            | "JOB_SEEKER";
+          preferred_states?: string[];
+          preferred_lgas?: string[];
+          monitored_commodities?: string[];
+          urgency_threshold?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+          min_confidence?: number;
+          notification_channels?: string[];
+          digest_frequency?: "REALTIME" | "DAILY" | "WEEKLY" | "MUTED";
+          muted_recommendation_types?: string[];
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agricultural_decisions: {
+        Row: {
+          id: string;
+          recommendation_id: string;
+          user_id: string;
+          decision:
+            | "ACCEPT"
+            | "REJECT"
+            | "DISMISS"
+            | "DEFER"
+            | "SAVE"
+            | "REQUEST_MORE_INFORMATION"
+            | "SEEK_EXPERT"
+            | "TAKE_EXTERNAL_ACTION";
+          actor_role: string;
+          decision_notes: string | null;
+          reasoning: string | null;
+          metadata: Json;
+          decided_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          recommendation_id: string;
+          user_id: string;
+          decision:
+            | "ACCEPT"
+            | "REJECT"
+            | "DISMISS"
+            | "DEFER"
+            | "SAVE"
+            | "REQUEST_MORE_INFORMATION"
+            | "SEEK_EXPERT"
+            | "TAKE_EXTERNAL_ACTION";
+          actor_role: string;
+          decision_notes?: string | null;
+          reasoning?: string | null;
+          metadata?: Json;
+          decided_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          recommendation_id?: string;
+          user_id?: string;
+          decision?:
+            | "ACCEPT"
+            | "REJECT"
+            | "DISMISS"
+            | "DEFER"
+            | "SAVE"
+            | "REQUEST_MORE_INFORMATION"
+            | "SEEK_EXPERT"
+            | "TAKE_EXTERNAL_ACTION";
+          actor_role?: string;
+          decision_notes?: string | null;
+          reasoning?: string | null;
+          metadata?: Json;
+          decided_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      agricultural_actions: {
+        Row: {
+          id: string;
+          decision_id: string | null;
+          recommendation_id: string;
+          user_id: string;
+          action_type:
+            | "VIEWED"
+            | "SAVED"
+            | "CONTACTED_PROVIDER"
+            | "REQUESTED_SERVICE"
+            | "JOINED_AGGREGATION"
+            | "CREATED_B2B_DEMAND"
+            | "CREATED_LISTING"
+            | "STARTED_PROCUREMENT"
+            | "REVIEWED_LOGISTICS"
+            | "SOUGHT_EXPERT_ADVICE"
+            | "USER_REPORTED_EXTERNAL_ACTION"
+            | "OTHER";
+          action_path: string | null;
+          is_external: boolean;
+          verification_status: "VERIFIED_PLATFORM" | "USER_REPORTED" | "PENDING_VERIFICATION";
+          action_details: Json;
+          notes: string | null;
+          executed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          decision_id?: string | null;
+          recommendation_id: string;
+          user_id: string;
+          action_type:
+            | "VIEWED"
+            | "SAVED"
+            | "CONTACTED_PROVIDER"
+            | "REQUESTED_SERVICE"
+            | "JOINED_AGGREGATION"
+            | "CREATED_B2B_DEMAND"
+            | "CREATED_LISTING"
+            | "STARTED_PROCUREMENT"
+            | "REVIEWED_LOGISTICS"
+            | "SOUGHT_EXPERT_ADVICE"
+            | "USER_REPORTED_EXTERNAL_ACTION"
+            | "OTHER";
+          action_path?: string | null;
+          is_external?: boolean;
+          verification_status?: "VERIFIED_PLATFORM" | "USER_REPORTED" | "PENDING_VERIFICATION";
+          action_details?: Json;
+          notes?: string | null;
+          executed_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          decision_id?: string | null;
+          recommendation_id?: string;
+          user_id?: string;
+          action_type?:
+            | "VIEWED"
+            | "SAVED"
+            | "CONTACTED_PROVIDER"
+            | "REQUESTED_SERVICE"
+            | "JOINED_AGGREGATION"
+            | "CREATED_B2B_DEMAND"
+            | "CREATED_LISTING"
+            | "STARTED_PROCUREMENT"
+            | "REVIEWED_LOGISTICS"
+            | "SOUGHT_EXPERT_ADVICE"
+            | "USER_REPORTED_EXTERNAL_ACTION"
+            | "OTHER";
+          action_path?: string | null;
+          is_external?: boolean;
+          verification_status?: "VERIFIED_PLATFORM" | "USER_REPORTED" | "PENDING_VERIFICATION";
+          action_details?: Json;
+          notes?: string | null;
+          executed_at?: string;
+          created_at?: string;
+        };
+      };
+      decision_action_links: {
+        Row: {
+          id: string;
+          decision_id: string;
+          action_id: string;
+          linked_at: string;
+        };
+        Insert: {
+          id?: string;
+          decision_id: string;
+          action_id: string;
+          linked_at?: string;
+        };
+        Update: {
+          id?: string;
+          decision_id?: string;
+          action_id?: string;
+          linked_at?: string;
+        };
+      };
     };
   };
 }
+
