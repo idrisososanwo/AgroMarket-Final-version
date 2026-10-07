@@ -25,10 +25,22 @@ export default function HomePage() {
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
+              href="/my-intelligence"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-900 transition"
+            >
+              My Agricultural Intelligence &rarr;
+            </Link>
+            <Link
               href="/ecosystem"
               className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-800 transition"
             >
-              Agricultural Ecosystem & Value Chains &rarr;
+              Agricultural Ecosystem &rarr;
+            </Link>
+            <Link
+              href="/intelligence"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-700 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 transition"
+            >
+              Intelligence Command Center
             </Link>
             <Link
               href="/marketplace"
