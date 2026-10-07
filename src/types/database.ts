@@ -4709,6 +4709,89 @@ export interface Database {
           linked_at?: string;
         };
       };
+      agricultural_action_integrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          recommendation_id: string;
+          decision_id: string | null;
+          action_id: string | null;
+          action_intent: string;
+          destination_type: string;
+          destination_url: string;
+          context_payload: Json;
+          status:
+            | "NOT_STARTED"
+            | "VIEWED"
+            | "ACTION_INITIATED"
+            | "ACTION_COMPLETED"
+            | "ACTION_CANCELLED"
+            | "ACTION_FAILED"
+            | "EXPIRED"
+            | "UNKNOWN";
+          revalidation_status: "PENDING" | "VALID" | "STALE" | "UNAVAILABLE" | "FAILED";
+          revalidation_details: Json;
+          revalidated_at: string | null;
+          completed_at: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recommendation_id: string;
+          decision_id?: string | null;
+          action_id?: string | null;
+          action_intent: string;
+          destination_type: string;
+          destination_url: string;
+          context_payload?: Json;
+          status?:
+            | "NOT_STARTED"
+            | "VIEWED"
+            | "ACTION_INITIATED"
+            | "ACTION_COMPLETED"
+            | "ACTION_CANCELLED"
+            | "ACTION_FAILED"
+            | "EXPIRED"
+            | "UNKNOWN";
+          revalidation_status?: "PENDING" | "VALID" | "STALE" | "UNAVAILABLE" | "FAILED";
+          revalidation_details?: Json;
+          revalidated_at?: string | null;
+          completed_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recommendation_id?: string;
+          decision_id?: string | null;
+          action_id?: string | null;
+          action_intent?: string;
+          destination_type?: string;
+          destination_url?: string;
+          context_payload?: Json;
+          status?:
+            | "NOT_STARTED"
+            | "VIEWED"
+            | "ACTION_INITIATED"
+            | "ACTION_COMPLETED"
+            | "ACTION_CANCELLED"
+            | "ACTION_FAILED"
+            | "EXPIRED"
+            | "UNKNOWN";
+          revalidation_status?: "PENDING" | "VALID" | "STALE" | "UNAVAILABLE" | "FAILED";
+          revalidation_details?: Json;
+          revalidated_at?: string | null;
+          completed_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

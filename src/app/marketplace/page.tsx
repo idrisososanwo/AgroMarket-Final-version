@@ -2,10 +2,14 @@ import Link from "next/link";
 import { getMarketplaceListings, getCategories } from "@/features/marketplace/queries";
 import { ListingCard } from "@/features/marketplace/components/listing-card";
 import { MarketplaceFilterBar } from "@/features/marketplace/components/marketplace-filter-bar";
+import { IntelligenceContextBanner } from "@/features/action-integration/components/intelligence-context-banner";
 
 interface MarketplacePageProps {
   searchParams: Promise<{
     search?: string;
+    commodity?: string;
+    intel_ref?: string;
+    dec_ref?: string;
     category?: string;
     state?: string;
     minPrice?: string;
@@ -23,11 +27,12 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
   const page = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
   const minPrice = resolvedParams.minPrice ? parseFloat(resolvedParams.minPrice) : undefined;
   const maxPrice = resolvedParams.maxPrice ? parseFloat(resolvedParams.maxPrice) : undefined;
+  const activeSearch = resolvedParams.search || resolvedParams.commodity;
 
   const [categories, { listings, totalCount, totalPages }] = await Promise.all([
     getCategories(),
     getMarketplaceListings({
-      search: resolvedParams.search,
+      search: activeSearch,
       category: resolvedParams.category,
       state: resolvedParams.state,
       minPrice,
@@ -41,7 +46,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
   // Build pagination links while preserving other filters
   const buildPageUrl = (newPage: number) => {
     const params = new URLSearchParams();
-    if (resolvedParams.search) params.set("search", resolvedParams.search);
+    if (activeSearch) params.set("search", activeSearch);
     if (resolvedParams.category && resolvedParams.category !== "all") {
       params.set("category", resolvedParams.category);
     }
@@ -53,6 +58,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
     if (resolvedParams.sortBy && resolvedParams.sortBy !== "newest") {
       params.set("sortBy", resolvedParams.sortBy);
     }
+    if (resolvedParams.intel_ref) params.set("intel_ref", resolvedParams.intel_ref);
     params.set("page", newPage.toString());
     return `/marketplace?${params.toString()}`;
   };
@@ -60,6 +66,15 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
+        {/* Intelligence Context Banner if navigated from recommendation */}
+        {(resolvedParams.intel_ref || resolvedParams.commodity) && (
+          <IntelligenceContextBanner
+            commodity={resolvedParams.commodity || resolvedParams.search}
+            state={resolvedParams.state}
+            recommendationId={resolvedParams.intel_ref}
+          />
+        )}
+
         {/* Page Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
