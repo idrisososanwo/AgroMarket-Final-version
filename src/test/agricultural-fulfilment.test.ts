@@ -488,9 +488,11 @@ describe("Phase 3.11 — Agricultural Fulfilment, Reconciliation & Reliability",
         state: "Kano",
         lga: "Dala",
         roles: ["FARMER"],
-        activeRole: "FARMER",
+        isEmailVerified: true,
+        isPhoneVerified: false,
         isVerified: true,
-        bannedUntil: null,
+        isOnboarded: true,
+        createdAt: new Date().toISOString(),
       };
       vi.spyOn(authServer, "getCurrentUser").mockResolvedValue(mockUser);
 

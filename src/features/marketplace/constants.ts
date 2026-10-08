@@ -10,6 +10,8 @@ export const NIGERIAN_STATES = [
   "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
 ] as const;
 
+export type NigerianState = (typeof NIGERIAN_STATES)[number];
+
 export const PRODUCE_UNITS = [
   "100kg Bag",
   "50kg Bag",
