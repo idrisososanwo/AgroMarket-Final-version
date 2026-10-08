@@ -198,3 +198,49 @@ export async function calculateIntelligenceEffectivenessMetricsAction(): Promise
     return { success: false, error: message };
   }
 }
+
+/**
+ * Server Action: Queries the deterministic governance gate status for an action intent.
+ */
+export async function checkActionGovernanceGateAction(params: {
+  recommendationId: string;
+  actionIntent: string;
+  destinationType: string;
+  commodity?: string | null;
+  state?: string | null;
+}): Promise<
+  ActionResult<{
+    isPermitted: boolean;
+    decision: string;
+    message: string;
+    blockingReason?: string;
+  }>
+> {
+  try {
+    const user = await getCurrentUser();
+    const actorRole = user?.roles?.[0] || "BUYER";
+
+    const gateResult = await evaluateActionGovernanceGate({
+      recommendationId: params.recommendationId,
+      actionIntent: params.actionIntent,
+      actorRole,
+      domain: params.destinationType,
+      commodity: params.commodity || undefined,
+      contextPayload: { commodity: params.commodity, state: params.state },
+      userId: user?.id,
+    });
+
+    return {
+      success: true,
+      data: {
+        isPermitted: gateResult.isPermitted,
+        decision: gateResult.evaluation.decision,
+        message: gateResult.message,
+        blockingReason: gateResult.blockingReason ?? undefined,
+      },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to evaluate governance gate.";
+    return { success: false, error: message };
+  }
+}

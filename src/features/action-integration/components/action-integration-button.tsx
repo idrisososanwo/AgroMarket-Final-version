@@ -8,7 +8,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowRight, Loader2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { ActionResolvedRoute } from "../types";
 import { createActionIntegrationAction, revalidateActionDestinationAction } from "../actions";
 
@@ -32,10 +32,12 @@ export function ActionIntegrationButton({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [staleWarning, setStaleWarning] = useState<string | null>(null);
+  const [governanceBlock, setGovernanceBlock] = useState<string | null>(null);
 
   const handleActionClick = async () => {
     setLoading(true);
     setStaleWarning(null);
+    setGovernanceBlock(null);
 
     try {
       // 1. If revalidation is required, check live availability
@@ -53,8 +55,8 @@ export function ActionIntegrationButton({
         }
       }
 
-      // 2. Record governed action integration
-      await createActionIntegrationAction({
+      // 2. Record governed action integration (enforces server-side governance gate)
+      const actionResult = await createActionIntegrationAction({
         recommendationId,
         decisionId,
         actionIntent: resolvedRoute.intent,
@@ -69,11 +71,16 @@ export function ActionIntegrationButton({
         },
       });
 
-      // 3. Navigate to destination route
+      if (!actionResult.success) {
+        setGovernanceBlock(actionResult.error || "Action blocked under AgroMarket governance policy.");
+        return;
+      }
+
+      // 3. Navigate to destination route on permitted action
       router.push(resolvedRoute.url);
     } catch (err) {
-      console.warn("Action integration dispatch fallback navigation:", err);
-      router.push(resolvedRoute.url);
+      const msg = err instanceof Error ? err.message : "Unexpected governance gate failure.";
+      setGovernanceBlock(msg);
     } finally {
       setLoading(false);
     }
@@ -85,6 +92,16 @@ export function ActionIntegrationButton({
         <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 p-2 rounded border border-amber-200">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
           <span>{staleWarning}</span>
+        </div>
+      )}
+
+      {governanceBlock && (
+        <div className="flex items-start gap-1.5 text-xs text-red-900 bg-red-50 p-2.5 rounded-lg border border-red-200">
+          <ShieldAlert className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+          <div>
+            <strong className="block font-semibold">Governance Policy Notice:</strong>
+            <span>{governanceBlock}</span>
+          </div>
         </div>
       )}
 
@@ -100,7 +117,7 @@ export function ActionIntegrationButton({
         {loading ? (
           <>
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>Verifying & Opening...</span>
+            <span>Evaluating Policy Gate...</span>
           </>
         ) : (
           <>
@@ -112,3 +129,4 @@ export function ActionIntegrationButton({
     </div>
   );
 }
+

@@ -308,3 +308,274 @@ export async function getActiveOverrideForEvaluation(
     return null;
   }
 }
+
+// -----------------------------------------------------------------------------
+// 4. GOVERNANCE COMMAND CENTER QUERIES & LISTINGS
+// -----------------------------------------------------------------------------
+
+export async function getHumanApprovalById(id: string): Promise<HumanApprovalRecord | null> {
+  const cached = inMemoryApprovals.find((a) => a.id === id);
+  if (cached) return cached;
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("agricultural_human_approvals")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      evaluationId: data.evaluation_id,
+      recommendationId: data.recommendation_id,
+      actionIntent: data.action_intent,
+      approverId: data.approver_id,
+      approverRole: data.approver_role,
+      approvalType: data.approval_type,
+      status: data.status,
+      justification: data.justification,
+      evidenceReferences: data.evidence_references || [],
+      policyVersion: data.policy_version,
+      expiresAt: data.expires_at,
+      revokedAt: data.revoked_at,
+      revocationReason: data.revocation_reason,
+      supersededById: data.superseded_by_id,
+      metadata: data.metadata || {},
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function updateHumanApproval(approval: HumanApprovalRecord): Promise<boolean> {
+  assertNoProhibitedProduce(approval.justification, "Update Human Approval Justification");
+  assertNoProhibitedProduce(approval.metadata, "Update Human Approval Metadata");
+
+  const idx = inMemoryApprovals.findIndex((a) => a.id === approval.id);
+  if (idx >= 0) {
+    inMemoryApprovals[idx] = approval;
+  } else {
+    inMemoryApprovals.push(approval);
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("agricultural_human_approvals")
+      .update({
+        status: approval.status,
+        justification: approval.justification,
+        revoked_at: approval.revokedAt,
+        revocation_reason: approval.revocationReason,
+        metadata: approval.metadata,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", approval.id);
+
+    if (error) {
+      console.warn("DB notice in updateHumanApproval, fallback used:", error.message);
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export async function getAllGovernanceEvaluations(filters?: {
+  decision?: string;
+  riskLevel?: string;
+  agentId?: string;
+  limit?: number;
+}): Promise<GovernanceEvaluationResult[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase.from("agricultural_governance_evaluations").select("*");
+    if (filters?.decision) query = query.eq("decision", filters.decision);
+    if (filters?.riskLevel) query = query.eq("risk_level", filters.riskLevel);
+    if (filters?.agentId) query = query.eq("agent_id", filters.agentId);
+    query = query.order("evaluated_at", { ascending: false }).limit(filters?.limit || 50);
+
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data.map((d) => ({
+        id: d.id,
+        recommendationId: d.recommendation_id,
+        scenarioId: d.scenario_id,
+        agentId: d.agent_id,
+        domain: d.domain,
+        actionIntent: d.action_intent,
+        actorRole: d.actor_role,
+        riskLevel: d.risk_level,
+        autonomyLevel: d.autonomy_level,
+        decision: d.decision,
+        requiredReviewLevel: d.required_review_level,
+        reasons: d.reasons || [],
+        policyVersion: d.policy_version,
+        isProhibitedAction: d.is_prohibited_action,
+        evidenceCount: d.evidence_count,
+        confidenceScore: Number(d.confidence_score),
+        contextMetadata: d.context_metadata || {},
+        evaluatedAt: d.evaluated_at,
+      }));
+    }
+  } catch {
+    // In-memory fallback
+  }
+
+  let list = [...inMemoryEvaluations];
+
+  if (filters?.decision) {
+    list = list.filter((e) => e.decision === filters.decision);
+  }
+  if (filters?.riskLevel) {
+    list = list.filter((e) => e.riskLevel === filters.riskLevel);
+  }
+  if (filters?.agentId) {
+    list = list.filter((e) => e.agentId === filters.agentId);
+  }
+
+  list.sort((a, b) => new Date(b.evaluatedAt).getTime() - new Date(a.evaluatedAt).getTime());
+  const limit = filters?.limit || 50;
+  return list.slice(0, limit);
+}
+
+export async function getAllHumanApprovals(filters?: {
+  status?: string;
+  approvalType?: string;
+  limit?: number;
+}): Promise<HumanApprovalRecord[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase.from("agricultural_human_approvals").select("*");
+    if (filters?.status) query = query.eq("status", filters.status);
+    if (filters?.approvalType) query = query.eq("approval_type", filters.approvalType);
+    query = query.order("created_at", { ascending: false }).limit(filters?.limit || 50);
+
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data.map((d) => ({
+        id: d.id,
+        evaluationId: d.evaluation_id,
+        recommendationId: d.recommendation_id,
+        actionIntent: d.action_intent,
+        approverId: d.approver_id,
+        approverRole: d.approver_role,
+        approvalType: d.approval_type,
+        status: d.status,
+        justification: d.justification,
+        evidenceReferences: d.evidence_references || [],
+        revocationReason: d.revocation_reason,
+        policyVersion: d.policy_version,
+        metadata: d.metadata || {},
+        expiresAt: d.expires_at,
+        createdAt: d.created_at,
+        updatedAt: d.updated_at,
+      }));
+    }
+  } catch {
+    // in-memory fallback
+  }
+
+  let list = [...inMemoryApprovals];
+
+  if (filters?.status) {
+    list = list.filter((a) => a.status === filters.status);
+  }
+  if (filters?.approvalType) {
+    list = list.filter((a) => a.approvalType === filters.approvalType);
+  }
+
+  list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const limit = filters?.limit || 50;
+  return list.slice(0, limit);
+}
+
+export async function getAllGovernanceOverrides(limit = 50): Promise<GovernanceOverrideRecord[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("agricultural_governance_overrides")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (!error && data && data.length > 0) {
+      return data.map((d) => ({
+        id: d.id,
+        evaluationId: d.evaluation_id,
+        overrideById: d.override_by_id,
+        overrideRole: d.override_role,
+        originalDecision: d.original_decision,
+        overrideDecision: d.override_decision,
+        reason: d.reason,
+        overriddenPolicyRules: d.overridden_policy_rules || [],
+        policyVersion: d.policy_version,
+        metadata: d.metadata || {},
+        createdAt: d.created_at,
+      }));
+    }
+  } catch {
+    // in-memory fallback
+  }
+
+  const list = [...inMemoryOverrides];
+  list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return list.slice(0, limit);
+}
+
+export async function getGovernanceSummaryStats(): Promise<import("./types").GovernanceSummaryStats> {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  const evals = await getAllGovernanceEvaluations({ limit: 1000 });
+  const approvals = await getAllHumanApprovals({ limit: 1000 });
+  const overrides = await getAllGovernanceOverrides(1000);
+
+  const totalEvaluations = evals.length;
+  const evaluationsToday = evals.filter((e) => e.evaluatedAt.startsWith(todayStr)).length;
+  const evaluationsRequiringReview = evals.filter(
+    (e) =>
+      e.decision === "REQUIRE_HUMAN_APPROVAL" ||
+      e.decision === "REQUIRE_PROFESSIONAL_REVIEW" ||
+      e.decision === "REQUIRE_AUTHORITY_REVIEW"
+  ).length;
+
+  const pendingApprovals = approvals.filter((a) => a.status === "PENDING").length;
+  const professionalReviewsPending = evals.filter(
+    (e) => e.decision === "REQUIRE_PROFESSIONAL_REVIEW"
+  ).length;
+  const authorityReviewsPending = evals.filter(
+    (e) => e.decision === "REQUIRE_AUTHORITY_REVIEW"
+  ).length;
+
+  const blockedActions = evals.filter((e) => e.decision === "DENY").length;
+  const insufficientDataDecisions = evals.filter(
+    (e) => e.decision === "INSUFFICIENT_DATA"
+  ).length;
+
+  const expiredApprovals = approvals.filter(
+    (a) => a.status === "EXPIRED" || (a.status === "APPROVED" && new Date(a.expiresAt) < now)
+  ).length;
+
+  const recentOverrides = overrides.length;
+
+  return {
+    totalEvaluations,
+    evaluationsToday,
+    evaluationsRequiringReview,
+    pendingApprovals,
+    professionalReviewsPending,
+    authorityReviewsPending,
+    blockedActions,
+    insufficientDataDecisions,
+    expiredApprovals,
+    recentOverrides,
+    activePolicyVersion: "v1.0.0",
+  };
+}
+

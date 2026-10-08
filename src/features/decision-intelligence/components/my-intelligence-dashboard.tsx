@@ -128,6 +128,31 @@ export function MyIntelligenceDashboard({ initialData }: MyIntelligenceDashboard
     }
   };
 
+  const getGovernanceStatusInfo = (rec: GovernedDecisionRecommendation) => {
+    if (rec.confidence < 0.35 || rec.recommendationType === "INSUFFICIENT_DATA") {
+      return {
+        label: "Insufficient Data",
+        className: "bg-neutral-100 text-neutral-700 border-neutral-300",
+      };
+    }
+    if ((rec.contributingAgents as string[]).includes("DISEASE_BIOSECURITY") || rec.urgency === "CRITICAL") {
+      return {
+        label: "Professional Review Required",
+        className: "bg-purple-100 text-purple-800 border-purple-300",
+      };
+    }
+    if (rec.urgency === "HIGH" || rec.priority === "HIGH") {
+      return {
+        label: "Human Approval Required",
+        className: "bg-amber-100 text-amber-800 border-amber-300",
+      };
+    }
+    return {
+      label: "Action Permitted",
+      className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    };
+  };
+
   const tabs = [
     { id: "overview", label: "1. Overview", icon: Compass },
     { id: "attention", label: "2. Attention Needed", icon: AlertTriangle, count: criticalItems.length },
@@ -366,8 +391,8 @@ export function MyIntelligenceDashboard({ initialData }: MyIntelligenceDashboard
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
                         {rec.recommendationType.replace(/_/g, " ")}
                       </span>
-                      <span className="text-[11px] font-semibold text-emerald-700">
-                        {(rec.confidence * 100).toFixed(0)}% Confidence
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getGovernanceStatusInfo(rec).className}`}>
+                        {getGovernanceStatusInfo(rec).label}
                       </span>
                     </div>
                     <h4 className="font-bold text-neutral-900 text-sm line-clamp-2">{rec.title}</h4>
@@ -510,6 +535,9 @@ export function MyIntelligenceDashboard({ initialData }: MyIntelligenceDashboard
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getUrgencyBadge(rec.urgency)}`}>
                         {rec.urgency}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getGovernanceStatusInfo(rec).className}`}>
+                        {getGovernanceStatusInfo(rec).label}
                       </span>
                       <span className="text-xs font-medium text-neutral-400">
                         {(rec.confidence * 100).toFixed(0)}% Evidence Credibility

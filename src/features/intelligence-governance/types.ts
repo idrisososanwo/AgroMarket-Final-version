@@ -249,6 +249,7 @@ export interface HumanApprovalRecord {
   approverId: string;
   approverRole: ActorRole | string;
   approvalType: ApprovalType;
+  riskLevel?: GovernanceRiskLevel;
   status: ApprovalStatus;
   justification: string;
   evidenceReferences: string[];
@@ -316,4 +317,22 @@ export interface ActionGateCheckResult {
   message: string;
   blockingReason?: string | null;
   requiredAction?: "NONE" | "SUBMIT_APPROVAL" | "OBTAIN_EXPERT_REVIEW" | "OBTAIN_AUTHORITY_REVIEW" | "BLOCKED";
+}
+
+// -----------------------------------------------------------------------------
+// 15. GOVERNANCE SUMMARY STATISTICS (Administrative Command Center)
+// -----------------------------------------------------------------------------
+
+export interface GovernanceSummaryStats {
+  totalEvaluations: number;
+  evaluationsToday: number;
+  evaluationsRequiringReview: number;
+  pendingApprovals: number;
+  professionalReviewsPending: number;
+  authorityReviewsPending: number;
+  blockedActions: number;
+  insufficientDataDecisions: number;
+  expiredApprovals: number;
+  recentOverrides: number;
+  activePolicyVersion: string;
 }

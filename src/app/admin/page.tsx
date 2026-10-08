@@ -127,6 +127,21 @@ export default async function AdminConsolePage() {
                 Open Intelligence Console &rarr;
               </div>
             </Link>
+
+            <Link
+              href="/admin/governance"
+              className="flex flex-col justify-between rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 transition hover:border-[#0F4327] hover:bg-emerald-50/20"
+            >
+              <div>
+                <div className="text-sm font-bold text-neutral-900">Intelligence Governance & Oversight</div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Deterministic policy engine oversight, pending approvals queue, agent matrices, and immutable audit logs.
+                </p>
+              </div>
+              <div className="mt-3 text-xs font-semibold text-[#0F4327]">
+                Manage Intelligence Governance &rarr;
+              </div>
+            </Link>
           </div>
         </div>
       </div>
