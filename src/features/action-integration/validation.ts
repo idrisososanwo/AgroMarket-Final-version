@@ -89,6 +89,7 @@ export const VALID_AGROMARKET_ACTION_ROUTES = [
   "/farmer/listings/new",
   "/farmer/listings",
   "/shared-purchases",
+  "/coordination",
   "/equipment",
   "/services",
   "/jobs",

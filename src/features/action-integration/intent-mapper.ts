@@ -164,13 +164,23 @@ export function resolveRecommendationAction(options: ResolveActionOptions): Acti
       break;
 
     case "REVIEW_AGGREGATION_OPPORTUNITY":
-      intent = "VIEW_AGGREGATION_OPTIONS";
-      destinationType = "SHARED_PURCHASE";
-      baseRoute = "/shared-purchases";
-      buttonLabel = "Explore Aggregation Pools";
-      guidanceText = `Pooled buyer demand or farmer cooperative aggregation can reduce unit logistics and procurement costs.`;
-      bannerText = `You're exploring shared purchases because volume aggregation was recommended for ${commodity}.`;
-      requiresRevalidation = true;
+      if (actorRole === "FARMER" || actorRole === "BUSINESS") {
+        intent = "VIEW_COORDINATION_OPPORTUNITY";
+        destinationType = "COORDINATION";
+        baseRoute = "/coordination";
+        buttonLabel = "View Coordination Hub";
+        guidanceText = `Multi-farmer supply coordination opportunity identified for ${commodity}${region}. Review requirements and commit supply.`;
+        bannerText = `You're reviewing multi-party coordination opportunities for ${commodity}.`;
+        requiresRevalidation = true;
+      } else {
+        intent = "VIEW_AGGREGATION_OPTIONS";
+        destinationType = "SHARED_PURCHASE";
+        baseRoute = "/shared-purchases";
+        buttonLabel = "Explore Aggregation Pools";
+        guidanceText = `Pooled buyer demand or farmer cooperative aggregation can reduce unit logistics and procurement costs.`;
+        bannerText = `You're exploring shared purchases because volume aggregation was recommended for ${commodity}.`;
+        requiresRevalidation = true;
+      }
       break;
 
     case "INVESTIGATE":
