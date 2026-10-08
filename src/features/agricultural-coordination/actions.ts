@@ -15,16 +15,25 @@ import {
   confirmSupplyCommitmentInputSchema,
   recordFulfilmentInputSchema,
   cancelOpportunityInputSchema,
+  confirmCommitmentQuantityInputSchema,
+  updateFulfilmentReadinessInputSchema,
+  submitFulfilmentEvidenceInputSchema,
+  recordCommitmentFulfilmentInputSchema,
+  recordCommitmentFailureInputSchema,
+  linkCommitmentDisputeInputSchema,
   assertNoProhibitedProduceCoordination,
   resolveCanonicalQuantityKg,
 } from "./validation";
 import {
   validateOpportunityTransition,
   validateCommitmentTransition,
+  validateReadinessTransition,
 } from "./state-machine";
 import {
   CoordinationOpportunity,
   SupplyCommitment,
+  CommitmentEvidence,
+  QuantityReconciliationResult,
 } from "./types";
 import {
   getCoordinationOpportunityById,
@@ -34,7 +43,12 @@ import {
   saveCoordinationParticipant,
   recordCoordinationEvent,
   atomicAcceptSupplyCommitment,
+  saveCommitmentEvidence,
+  atomicRecordCommitmentFulfilment,
 } from "./data-layer";
+import {
+  reconcileCommitmentQuantity,
+} from "./calculations";
 import { evaluateGovernancePolicy } from "@/features/intelligence-governance/policy-engine";
 import { ActorRole } from "@/features/decision-intelligence/types";
 
@@ -258,6 +272,11 @@ export async function offerSupplyCommitmentAction(
     metadata: input.metadata || {},
     createdAt: now,
     updatedAt: now,
+    readinessStatus: "NOT_READY",
+    confirmedQuantity: null,
+    fulfilledQuantity: 0,
+    remainingQuantity: input.committedQuantity,
+    reconciliationStatus: "PENDING",
   };
 
   await saveSupplyCommitment(commitment);
@@ -636,3 +655,397 @@ export async function cancelCoordinationOpportunityAction(
 
   return { success: true, data: opportunity };
 }
+
+// -----------------------------------------------------------------------------
+// PHASE 3.11: FULFILMENT, RECONCILIATION & READINESS ACTIONS
+// -----------------------------------------------------------------------------
+
+/**
+ * Server Action: Confirms a commitment's ready quantity before fulfilment dispatch.
+ */
+export async function confirmCommitmentQuantityAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<SupplyCommitment>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = confirmCommitmentQuantityInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  const isOwner = commitment.participantId === user.id;
+  const isAdmin = user.roles.includes("ADMIN");
+  if (!isOwner && !isAdmin) {
+    return { success: false, error: "Unauthorized: Only the commitment owner or admin can confirm supply quantity." };
+  }
+
+  if (!["ACCEPTED", "CONFIRMED"].includes(commitment.status)) {
+    return { success: false, error: `Cannot confirm quantity for commitment in state '${commitment.status}'.` };
+  }
+
+  if (input.confirmedQuantity > commitment.committedQuantity) {
+    return {
+      success: false,
+      error: `Confirmed quantity (${input.confirmedQuantity} ${commitment.unit}) cannot exceed initial committed quantity (${commitment.committedQuantity} ${commitment.unit}).`,
+    };
+  }
+
+  commitment.confirmedQuantity = input.confirmedQuantity;
+  commitment.status = "CONFIRMED";
+  commitment.updatedAt = new Date().toISOString();
+  await saveSupplyCommitment(commitment);
+
+  await recordCoordinationEvent({
+    id: crypto.randomUUID(),
+    opportunityId: commitment.opportunityId,
+    commitmentId: commitment.id,
+    actorId: user.id,
+    eventType: "COMMITMENT_CONFIRMED",
+    title: `Commitment quantity confirmed (${input.confirmedQuantity} ${commitment.unit})`,
+    details: {
+      confirmed_quantity: input.confirmedQuantity,
+      committed_quantity: commitment.committedQuantity,
+      notes: input.notes,
+    },
+    occurredAt: new Date().toISOString(),
+    recordedAt: new Date().toISOString(),
+  });
+
+  return { success: true, data: commitment };
+}
+
+/**
+ * Server Action: Updates commitment readiness status along the fulfilment pipeline.
+ */
+export async function updateFulfilmentReadinessAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<SupplyCommitment>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = updateFulfilmentReadinessInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  const opportunity = await getCoordinationOpportunityById(commitment.opportunityId);
+  const isOwner = commitment.participantId === user.id;
+  const isCoordinator = Boolean(opportunity && opportunity.creatorId === user.id);
+  const isAdmin = user.roles.includes("ADMIN");
+
+  if (!isOwner && !isCoordinator && !isAdmin) {
+    return { success: false, error: "Unauthorized: Insufficient permissions to update readiness." };
+  }
+
+  try {
+    validateReadinessTransition(commitment.readinessStatus, input.readinessStatus);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message };
+  }
+
+  commitment.readinessStatus = input.readinessStatus;
+  commitment.updatedAt = new Date().toISOString();
+  await saveSupplyCommitment(commitment);
+
+  await recordCoordinationEvent({
+    id: crypto.randomUUID(),
+    opportunityId: commitment.opportunityId,
+    commitmentId: commitment.id,
+    actorId: user.id,
+    eventType: "READINESS_CHANGED",
+    title: `Fulfilment readiness changed to ${input.readinessStatus}`,
+    details: {
+      previous_readiness: commitment.readinessStatus,
+      new_readiness: input.readinessStatus,
+      notes: input.notes,
+    },
+    occurredAt: new Date().toISOString(),
+    recordedAt: new Date().toISOString(),
+  });
+
+  return { success: true, data: commitment };
+}
+
+/**
+ * Server Action: Submits provenance-aware fulfilment evidence (logistics, aggregation, delivery).
+ */
+export async function submitFulfilmentEvidenceAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<CommitmentEvidence>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = submitFulfilmentEvidenceInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  if (input.notes) {
+    assertNoProhibitedProduceCoordination(input.notes, "Evidence Notes");
+  }
+
+  const evidence: CommitmentEvidence = {
+    id: crypto.randomUUID(),
+    commitmentId: commitment.id,
+    opportunityId: commitment.opportunityId,
+    submittedBy: user.id,
+    evidenceCategory: input.evidenceCategory,
+    provenance: input.provenance,
+    quantityObserved: input.quantityObserved ?? null,
+    unit: input.unit ?? commitment.unit,
+    referenceId: input.referenceId ?? null,
+    referenceType: input.referenceType ?? null,
+    notes: input.notes ?? null,
+    metadata: input.metadata || {},
+    createdAt: new Date().toISOString(),
+  };
+
+  const saved = await saveCommitmentEvidence(evidence);
+
+  await recordCoordinationEvent({
+    id: crypto.randomUUID(),
+    opportunityId: commitment.opportunityId,
+    commitmentId: commitment.id,
+    actorId: user.id,
+    eventType: "EVIDENCE_SUBMITTED",
+    title: `Fulfilment evidence submitted (${input.evidenceCategory})`,
+    details: {
+      evidence_id: saved.id,
+      category: input.evidenceCategory,
+      provenance: input.provenance,
+      quantity_observed: input.quantityObserved,
+      unit: input.unit,
+    },
+    occurredAt: new Date().toISOString(),
+    recordedAt: new Date().toISOString(),
+  });
+
+  return { success: true, data: saved };
+}
+
+/**
+ * Server Action: Atomically records physical fulfilment and reconciles quantities.
+ * Evaluates Phase 3.8 Governance, applies row-level lock concurrency, and logs immutable event.
+ */
+export async function recordCommitmentFulfilmentAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<{
+  commitment: SupplyCommitment;
+  reconciliation: QuantityReconciliationResult;
+}>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = recordCommitmentFulfilmentInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  const opportunity = await getCoordinationOpportunityById(commitment.opportunityId);
+  if (!opportunity) {
+    return { success: false, error: "Coordination opportunity not found." };
+  }
+
+  const isOwner = commitment.participantId === user.id;
+  const isCoordinator = opportunity.creatorId === user.id;
+  const isAdmin = user.roles.includes("ADMIN");
+
+  if (!isOwner && !isCoordinator && !isAdmin) {
+    return { success: false, error: "Unauthorized: Insufficient permissions to record fulfilment." };
+  }
+
+  if (input.notes) {
+    assertNoProhibitedProduceCoordination(input.notes, "Fulfilment Notes");
+  }
+
+  // Phase 3.8 Governance evaluation
+  const govDecision = evaluateGovernancePolicy({
+    agentId: "AGRICULTURAL_INTELLIGENCE_ORCHESTRATOR",
+    actionIntent: "EXECUTE_COORDINATION_FULFILMENT",
+    actorRole: user.roles.includes("ADMIN") ? "ADMIN" : (user.roles[0] as ActorRole),
+    domain: "COMMERCE",
+    commodity: commitment.commodity,
+    contextMetadata: {
+      commitmentId: commitment.id,
+      fulfilledQuantity: input.fulfilledQuantity,
+      unit: input.unit,
+      evidenceCategory: input.evidenceCategory,
+      provenance: input.provenance,
+    },
+  });
+
+  if (govDecision.decision === "DENY") {
+    return {
+      success: false,
+      error: `Governance Denied: ${govDecision.reasons.join(", ")}`,
+      code: "GOVERNANCE_BLOCKED",
+    };
+  }
+
+  // Atomic fulfilment mutation with concurrency protection
+  const atomicResult = await atomicRecordCommitmentFulfilment({
+    commitmentId: commitment.id,
+    actorId: user.id,
+    fulfilledQuantity: input.fulfilledQuantity,
+    evidenceCategory: input.evidenceCategory,
+    provenance: input.provenance,
+    notes: input.notes,
+    referenceId: input.referenceId,
+    referenceType: input.referenceType,
+    failureReason: input.failureReason,
+  });
+
+  if (!atomicResult.success) {
+    return {
+      success: false,
+      error: atomicResult.error || "Failed to record fulfilment atomically.",
+      code: atomicResult.code,
+    };
+  }
+
+  const updatedCommitment = (await getSupplyCommitmentById(commitment.id)) || commitment;
+
+  // Reconcile quantities
+  const reconciliation = reconcileCommitmentQuantity({
+    commitmentId: updatedCommitment.id,
+    committedQuantity: updatedCommitment.committedQuantity,
+    confirmedQuantity: updatedCommitment.confirmedQuantity,
+    fulfilledQuantity: updatedCommitment.fulfilledQuantity,
+    unit: updatedCommitment.unit,
+  });
+
+  return {
+    success: true,
+    data: {
+      commitment: updatedCommitment,
+      reconciliation,
+    },
+  };
+}
+
+/**
+ * Server Action: Explicitly records a commitment failure with controlled failure reason.
+ */
+export async function recordCommitmentFailureAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<SupplyCommitment>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = recordCommitmentFailureInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  const opportunity = await getCoordinationOpportunityById(commitment.opportunityId);
+  const isOwner = commitment.participantId === user.id;
+  const isCoordinator = Boolean(opportunity && opportunity.creatorId === user.id);
+  const isAdmin = user.roles.includes("ADMIN");
+
+  if (!isOwner && !isCoordinator && !isAdmin) {
+    return { success: false, error: "Unauthorized: Only commitment participant, coordinator, or admin can record failure." };
+  }
+
+  assertNoProhibitedProduceCoordination(input.notes, "Failure Notes");
+
+  const atomicResult = await atomicRecordCommitmentFulfilment({
+    commitmentId: commitment.id,
+    actorId: user.id,
+    fulfilledQuantity: 0,
+    evidenceCategory: "PRODUCER_CONFIRMATION",
+    provenance: "AUTHORIZED_REVIEW",
+    notes: input.notes,
+    failureReason: input.failureReason,
+  });
+
+  if (!atomicResult.success) {
+    return { success: false, error: atomicResult.error || "Failed to record failure." };
+  }
+
+  const updated = (await getSupplyCommitmentById(commitment.id)) || commitment;
+  return { success: true, data: updated };
+}
+
+/**
+ * Server Action: Links an existing Phase 0.8 dispute to a commitment.
+ */
+export async function linkCommitmentDisputeAction(
+  rawInput: unknown
+): Promise<CoordinationActionResult<SupplyCommitment>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please log in." };
+  }
+
+  const parseResult = linkCommitmentDisputeInputSchema.safeParse(rawInput);
+  if (!parseResult.success) {
+    return { success: false, error: parseResult.error.errors.map((e) => e.message).join(", ") };
+  }
+
+  const input = parseResult.data;
+  const commitment = await getSupplyCommitmentById(input.commitmentId);
+  if (!commitment) {
+    return { success: false, error: "Supply commitment not found." };
+  }
+
+  commitment.disputeId = input.disputeId;
+  commitment.updatedAt = new Date().toISOString();
+  await saveSupplyCommitment(commitment);
+
+  await recordCoordinationEvent({
+    id: crypto.randomUUID(),
+    opportunityId: commitment.opportunityId,
+    commitmentId: commitment.id,
+    actorId: user.id,
+    eventType: "DISPUTE_LINKED",
+    title: `Dispute linked to commitment: ${input.disputeId}`,
+    details: { dispute_id: input.disputeId, notes: input.notes },
+    occurredAt: new Date().toISOString(),
+    recordedAt: new Date().toISOString(),
+  });
+
+  return { success: true, data: commitment };
+}
+

@@ -7,11 +7,13 @@ import {
   CoordinationParticipant,
   SupplyCommitment,
   CoordinationEvent,
+  CommitmentEvidence,
   CoordinationCoverageSummary,
 } from "../types";
 import { CoordinationStatusBadge } from "./coordination-status-badge";
 import { CommitmentStatusBadge } from "./commitment-status-badge";
 import { CoverageProgressBar } from "./coverage-progress-bar";
+import { FulfilmentReconciliationPanel } from "./fulfilment-reconciliation-panel";
 import { calculateCoordinationCoverage } from "../calculations";
 import {
   offerSupplyCommitmentAction,
@@ -41,6 +43,7 @@ export interface CoordinationDetailViewProps {
   participants: CoordinationParticipant[];
   commitments: SupplyCommitment[];
   events: CoordinationEvent[];
+  evidenceList?: CommitmentEvidence[];
   currentUserId?: string | null;
   currentUserRole?: string | null;
 }
@@ -51,11 +54,13 @@ export function CoordinationDetailView({
   participants: _participants,
   commitments: initialCommitments,
   events: initialEvents,
+  evidenceList: initialEvidence = [],
   currentUserId,
   currentUserRole: _currentUserRole,
 }: CoordinationDetailViewProps) {
   const [commitments, setCommitments] = useState(initialCommitments);
   const [events] = useState(initialEvents);
+  const [evidence, setEvidence] = useState(initialEvidence);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [offerError, setOfferError] = useState<string | null>(null);
   const [offerSuccess, setOfferSuccess] = useState<string | null>(null);
@@ -184,6 +189,16 @@ export function CoordinationDetailView({
     } finally {
       setActionLoadingId(null);
     }
+  };
+
+  const handleCommitmentUpdated = (updated: SupplyCommitment) => {
+    setCommitments((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
+  };
+
+  const handleEvidenceAdded = (newEvidence: CommitmentEvidence) => {
+    setEvidence((prev) => [newEvidence, ...prev]);
   };
 
   return (
@@ -667,6 +682,19 @@ export function CoordinationDetailView({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Phase 3.11: Fulfilment Readiness, Reconciliation & Evidence Ledger */}
+      <div className="pt-4 border-t border-[#E5E0D5]">
+        <FulfilmentReconciliationPanel
+          opportunity={opportunity}
+          commitments={commitments}
+          evidenceList={evidence}
+          currentUserId={currentUserId}
+          currentUserRole={_currentUserRole}
+          onCommitmentUpdated={handleCommitmentUpdated}
+          onEvidenceAdded={handleEvidenceAdded}
+        />
       </div>
     </div>
   );

@@ -9,7 +9,9 @@ import {
   getOpportunityParticipants,
   getOpportunityCommitments,
   getOpportunityEvents,
+  getEvidenceForOpportunity,
   sanitizeSupplyCommitmentForViewer,
+  sanitizeEvidenceForViewer,
 } from "@/features/agricultural-coordination";
 import { CoordinationDetailView } from "@/features/agricultural-coordination/components";
 import { ArrowLeft } from "lucide-react";
@@ -46,17 +48,22 @@ export default async function CoordinationDetailPage({ params }: Props) {
     user && (user.id === opportunity.creatorId || user.roles.includes("ADMIN"))
   );
 
-  const [requirements, participants, rawCommitments, events] =
+  const [requirements, participants, rawCommitments, events, rawEvidence] =
     await Promise.all([
       getOpportunityRequirements(opportunity.id),
       getOpportunityParticipants(opportunity.id),
       getOpportunityCommitments(opportunity.id),
       getOpportunityEvents(opportunity.id),
+      getEvidenceForOpportunity(opportunity.id),
     ]);
 
-  // Privacy isolation: Sanitize peer commitments
+  // Privacy isolation: Sanitize peer commitments and evidence
   const commitments = rawCommitments.map((c) =>
     sanitizeSupplyCommitmentForViewer(c, user?.id, isCoordinatorOrAdmin)
+  );
+
+  const evidenceList = rawEvidence.map((e) =>
+    sanitizeEvidenceForViewer(e, user?.id, isCoordinatorOrAdmin)
   );
 
   return (
@@ -77,6 +84,7 @@ export default async function CoordinationDetailPage({ params }: Props) {
           participants={participants}
           commitments={commitments}
           events={events}
+          evidenceList={evidenceList}
           currentUserId={user?.id}
           currentUserRole={user?.roles[0]}
         />

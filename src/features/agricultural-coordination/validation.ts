@@ -76,6 +76,167 @@ export const cancelOpportunityInputSchema = z.object({
   reason: z.string().min(3, "Cancellation reason is required").max(500),
 });
 
+// Phase 3.11 Validation Schemas
+export const confirmCommitmentQuantityInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  confirmedQuantity: z.number().positive("Confirmed quantity must be greater than 0"),
+  notes: z.string().max(1000).optional(),
+});
+
+export const updateFulfilmentReadinessInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  readinessStatus: z.enum([
+    "NOT_READY",
+    "READY_FOR_AGGREGATION",
+    "READY_FOR_PROCESSING",
+    "READY_FOR_LOGISTICS",
+    "IN_FULFILMENT",
+    "FULFILLED",
+    "PARTIALLY_FULFILLED",
+    "FAILED",
+    "CANCELLED",
+  ]),
+  notes: z.string().max(1000).optional(),
+});
+
+export const submitFulfilmentEvidenceInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  evidenceCategory: z.enum([
+    "PRODUCER_CONFIRMATION",
+    "QUANTITY_CONFIRMATION",
+    "AVAILABILITY_CONFIRMATION",
+    "AGGREGATION_CONFIRMATION",
+    "PROCESSING_CONFIRMATION",
+    "LOGISTICS_HANDOFF",
+    "DELIVERY_CONFIRMATION",
+  ]),
+  provenance: z.enum([
+    "SELF_REPORTED",
+    "SYSTEM_DERIVED",
+    "TRANSACTION_OBSERVED",
+    "AUTHORIZED_REVIEW",
+    "EXTERNAL_SOURCE",
+  ]),
+  quantityObserved: z.number().min(0, "Observed quantity cannot be negative").optional(),
+  unit: z.string().max(30).optional(),
+  referenceId: z.string().uuid().optional(),
+  referenceType: z.enum([
+    "DELIVERY",
+    "DELIVERY_EVENT",
+    "PROCESSING_EVENT",
+    "AGGREGATION_POOL",
+    "DISPUTE",
+    "MANUAL_INSPECTION",
+  ]).optional(),
+  notes: z.string().max(2000).optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).superRefine((data, ctx) => {
+  if (data.notes) {
+    try {
+      assertNoProhibitedProduceCoordination(data.notes, "Evidence Notes");
+    } catch (err: unknown) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: err instanceof Error ? err.message : "Anti-Pork Policy Violation: Prohibited porcine content detected.",
+        path: ["notes"],
+      });
+    }
+  }
+});
+
+export const recordCommitmentFulfilmentInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  fulfilledQuantity: z.number().min(0, "Fulfilled quantity cannot be negative"),
+  unit: z.string().min(1, "Unit is required"),
+  evidenceCategory: z.enum([
+    "PRODUCER_CONFIRMATION",
+    "QUANTITY_CONFIRMATION",
+    "AVAILABILITY_CONFIRMATION",
+    "AGGREGATION_CONFIRMATION",
+    "PROCESSING_CONFIRMATION",
+    "LOGISTICS_HANDOFF",
+    "DELIVERY_CONFIRMATION",
+  ]),
+  provenance: z.enum([
+    "SELF_REPORTED",
+    "SYSTEM_DERIVED",
+    "TRANSACTION_OBSERVED",
+    "AUTHORIZED_REVIEW",
+    "EXTERNAL_SOURCE",
+  ]),
+  notes: z.string().max(2000).optional(),
+  referenceId: z.string().uuid().optional(),
+  referenceType: z.enum([
+    "DELIVERY",
+    "DELIVERY_EVENT",
+    "PROCESSING_EVENT",
+    "AGGREGATION_POOL",
+    "DISPUTE",
+    "MANUAL_INSPECTION",
+  ]).optional(),
+  failureReason: z.enum([
+    "SUPPLY_UNAVAILABLE",
+    "QUANTITY_SHORTFALL",
+    "TIMING_FAILURE",
+    "PROCESSING_CONSTRAINT",
+    "LOGISTICS_CONSTRAINT",
+    "SECURITY_DISRUPTION",
+    "QUALITY_REQUIREMENT_UNMET",
+    "PARTICIPANT_WITHDRAWAL",
+    "EXPIRED_COMMITMENT",
+    "INSUFFICIENT_EVIDENCE",
+    "OTHER",
+  ]).optional(),
+}).superRefine((data, ctx) => {
+  if (data.notes) {
+    try {
+      assertNoProhibitedProduceCoordination(data.notes, "Fulfilment Notes");
+    } catch (err: unknown) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: err instanceof Error ? err.message : "Anti-Pork Policy Violation: Prohibited porcine content detected.",
+        path: ["notes"],
+      });
+    }
+  }
+});
+
+export const recordCommitmentFailureInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  failureReason: z.enum([
+    "SUPPLY_UNAVAILABLE",
+    "QUANTITY_SHORTFALL",
+    "TIMING_FAILURE",
+    "PROCESSING_CONSTRAINT",
+    "LOGISTICS_CONSTRAINT",
+    "SECURITY_DISRUPTION",
+    "QUALITY_REQUIREMENT_UNMET",
+    "PARTICIPANT_WITHDRAWAL",
+    "EXPIRED_COMMITMENT",
+    "INSUFFICIENT_EVIDENCE",
+    "OTHER",
+  ]),
+  notes: z.string().min(3, "Failure notes must provide context").max(2000),
+}).superRefine((data, ctx) => {
+  if (data.notes) {
+    try {
+      assertNoProhibitedProduceCoordination(data.notes, "Failure Notes");
+    } catch (err: unknown) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: err instanceof Error ? err.message : "Anti-Pork Policy Violation: Prohibited porcine content detected.",
+        path: ["notes"],
+      });
+    }
+  }
+});
+
+export const linkCommitmentDisputeInputSchema = z.object({
+  commitmentId: z.string().uuid("Invalid commitment ID"),
+  disputeId: z.string().uuid("Invalid dispute ID"),
+  notes: z.string().max(1000).optional(),
+});
+
 // -----------------------------------------------------------------------------
 // 2. DOMAIN ASSERTIONS & SAFEGUARDS
 // -----------------------------------------------------------------------------

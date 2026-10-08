@@ -105,8 +105,86 @@ export const COORDINATION_EVENT_TYPES = [
   "FULFILMENT_RECORDED",
   "GOVERNANCE_BLOCKED",
   "CONCURRENCY_BLOCKED",
+  "READINESS_CHANGED",
+  "EVIDENCE_SUBMITTED",
+  "RECONCILIATION_COMPLETED",
+  "FULFILMENT_EXCEPTION_RECORDED",
+  "DISPUTE_LINKED",
+  "SHORTFALL_DECLARED",
 ] as const;
 export type CoordinationEventType = (typeof COORDINATION_EVENT_TYPES)[number];
+
+// -----------------------------------------------------------------------------
+// 1.1 PHASE 3.11: FULFILMENT, RECONCILIATION & EVIDENCE ENUMS
+// -----------------------------------------------------------------------------
+
+export const COMMITMENT_READINESS_STATUSES = [
+  "NOT_READY",
+  "READY_FOR_AGGREGATION",
+  "READY_FOR_PROCESSING",
+  "READY_FOR_LOGISTICS",
+  "IN_FULFILMENT",
+  "FULFILLED",
+  "PARTIALLY_FULFILLED",
+  "FAILED",
+  "CANCELLED",
+] as const;
+export type CommitmentReadinessStatus = (typeof COMMITMENT_READINESS_STATUSES)[number];
+
+export const QUANTITY_RECONCILIATION_STATUSES = [
+  "PENDING",
+  "EXACT",
+  "UNDER_FULFILLED",
+  "OVER_FULFILLED_BLOCKED",
+  "NO_FULFILMENT",
+  "INSUFFICIENT_DATA",
+] as const;
+export type QuantityReconciliationStatus = (typeof QUANTITY_RECONCILIATION_STATUSES)[number];
+
+export const COMMITMENT_FAILURE_REASONS = [
+  "SUPPLY_UNAVAILABLE",
+  "QUANTITY_SHORTFALL",
+  "TIMING_FAILURE",
+  "PROCESSING_CONSTRAINT",
+  "LOGISTICS_CONSTRAINT",
+  "SECURITY_DISRUPTION",
+  "QUALITY_REQUIREMENT_UNMET",
+  "PARTICIPANT_WITHDRAWAL",
+  "EXPIRED_COMMITMENT",
+  "INSUFFICIENT_EVIDENCE",
+  "OTHER",
+] as const;
+export type CommitmentFailureReason = (typeof COMMITMENT_FAILURE_REASONS)[number];
+
+export const EVIDENCE_CATEGORIES = [
+  "PRODUCER_CONFIRMATION",
+  "QUANTITY_CONFIRMATION",
+  "AVAILABILITY_CONFIRMATION",
+  "AGGREGATION_CONFIRMATION",
+  "PROCESSING_CONFIRMATION",
+  "LOGISTICS_HANDOFF",
+  "DELIVERY_CONFIRMATION",
+] as const;
+export type EvidenceCategory = (typeof EVIDENCE_CATEGORIES)[number];
+
+export const EVIDENCE_PROVENANCES = [
+  "SELF_REPORTED",
+  "SYSTEM_DERIVED",
+  "TRANSACTION_OBSERVED",
+  "AUTHORIZED_REVIEW",
+  "EXTERNAL_SOURCE",
+] as const;
+export type EvidenceProvenance = (typeof EVIDENCE_PROVENANCES)[number];
+
+export const EVIDENCE_REFERENCE_TYPES = [
+  "DELIVERY",
+  "DELIVERY_EVENT",
+  "PROCESSING_EVENT",
+  "AGGREGATION_POOL",
+  "DISPUTE",
+  "MANUAL_INSPECTION",
+] as const;
+export type EvidenceReferenceType = (typeof EVIDENCE_REFERENCE_TYPES)[number];
 
 // -----------------------------------------------------------------------------
 // 2. CORE DOMAIN INTERFACES
@@ -186,8 +264,35 @@ export interface SupplyCommitment {
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  // Phase 3.11: Fulfilment, Reconciliation & Readiness
+  readinessStatus: CommitmentReadinessStatus;
+  confirmedQuantity?: number | null;
+  fulfilledQuantity: number;
+  remainingQuantity: number;
+  reconciliationStatus: QuantityReconciliationStatus;
+  reconciledAt?: string | null;
+  reconciledBy?: string | null;
+  failureReason?: CommitmentFailureReason | null;
+  disputeId?: string | null;
   // Presentation fields (privacy sanitized)
   participantDisplayName?: string;
+}
+
+export interface CommitmentEvidence {
+  id: string;
+  commitmentId: string;
+  opportunityId: string;
+  submittedBy: string;
+  evidenceCategory: EvidenceCategory;
+  provenance: EvidenceProvenance;
+  quantityObserved?: number | null;
+  unit?: string | null;
+  referenceId?: string | null;
+  referenceType?: EvidenceReferenceType | null;
+  notes?: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  submitterDisplayName?: string;
 }
 
 export interface CoordinationEvent {
@@ -203,7 +308,7 @@ export interface CoordinationEvent {
 }
 
 // -----------------------------------------------------------------------------
-// 3. COMPUTED COVERAGE & ACCOUNTING
+// 3. COMPUTED COVERAGE, RECONCILIATION & SHORTFALL ACCOUNTING
 // -----------------------------------------------------------------------------
 
 export interface CoordinationCoverageSummary {
@@ -216,6 +321,44 @@ export interface CoordinationCoverageSummary {
   coverageStatus: CoordinationCoverageStatus;
   acceptedCommitmentsCount: number;
   pendingOffersCount: number;
+}
+
+export interface QuantityReconciliationResult {
+  commitmentId: string;
+  committedQuantity: number;
+  confirmedQuantity: number | null;
+  fulfilledQuantity: number;
+  receivedQuantity: number | null;
+  varianceQuantity: number;
+  variancePercentage: number;
+  outcome: QuantityReconciliationStatus;
+  isPartial: boolean;
+  remainingQuantity: number;
+  unit: string;
+  reconciledAt: string;
+}
+
+export interface CoordinationShortfallSummary {
+  opportunityId: string;
+  requiredQuantity: number;
+  fulfilledQuantity: number;
+  shortfallQuantity: number;
+  hasShortfall: boolean;
+  unit: string;
+}
+
+export interface ParticipantReliabilityMetrics {
+  participantId: string;
+  totalCommitments: number;
+  fulfilledCommitments: number;
+  partiallyFulfilledCommitments: number;
+  failedCommitments: number;
+  fulfilmentRate: number | null; // null if INSUFFICIENT_DATA
+  onTimeRate: number | null;
+  averageVariancePercentage: number | null;
+  status: "ADEQUATE_HISTORY" | "INSUFFICIENT_DATA";
+  minimumSampleSizeThreshold: number;
+  advisoryOnly: true;
 }
 
 // -----------------------------------------------------------------------------
@@ -279,4 +422,53 @@ export interface RecordFulfilmentInput {
 export interface CancelCoordinationOpportunityInput {
   opportunityId: string;
   reason: string;
+}
+
+// Phase 3.11: Fulfilment Actions
+export interface ConfirmCommitmentQuantityInput {
+  commitmentId: string;
+  confirmedQuantity: number;
+  notes?: string;
+}
+
+export interface UpdateFulfilmentReadinessInput {
+  commitmentId: string;
+  readinessStatus: CommitmentReadinessStatus;
+  notes?: string;
+}
+
+export interface SubmitFulfilmentEvidenceInput {
+  commitmentId: string;
+  evidenceCategory: EvidenceCategory;
+  provenance: EvidenceProvenance;
+  quantityObserved?: number;
+  unit?: string;
+  referenceId?: string;
+  referenceType?: EvidenceReferenceType;
+  notes?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecordCommitmentFulfilmentInput {
+  commitmentId: string;
+  fulfilledQuantity: number;
+  unit: string;
+  evidenceCategory: EvidenceCategory;
+  provenance: EvidenceProvenance;
+  notes?: string;
+  referenceId?: string;
+  referenceType?: EvidenceReferenceType;
+  failureReason?: CommitmentFailureReason;
+}
+
+export interface RecordCommitmentFailureInput {
+  commitmentId: string;
+  failureReason: CommitmentFailureReason;
+  notes: string;
+}
+
+export interface LinkCommitmentDisputeInput {
+  commitmentId: string;
+  disputeId: string;
+  notes?: string;
 }

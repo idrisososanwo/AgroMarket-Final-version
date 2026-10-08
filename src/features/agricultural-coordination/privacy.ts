@@ -57,3 +57,28 @@ export function sanitizeParticipantForViewer(
     metadata: {},
   };
 }
+
+/**
+ * Sanitizes commitment evidence for peer viewing.
+ */
+export function sanitizeEvidenceForViewer(
+  evidence: import("./types").CommitmentEvidence,
+  viewerUserId?: string | null,
+  isOpportunityCoordinatorOrAdmin: boolean = false
+): import("./types").CommitmentEvidence {
+  const isSubmitter = Boolean(viewerUserId && evidence.submittedBy === viewerUserId);
+
+  if (isSubmitter || isOpportunityCoordinatorOrAdmin) {
+    return evidence;
+  }
+
+  return {
+    ...evidence,
+    submittedBy: `masked-${evidence.submittedBy.slice(0, 8)}`,
+    submitterDisplayName: evidence.submitterDisplayName ? "Verified Participant" : undefined,
+    referenceId: null,
+    notes: null,
+    metadata: {},
+  };
+}
+

@@ -7,6 +7,7 @@
 import {
   CoordinationOpportunityStatus,
   SupplyCommitmentStatus,
+  CommitmentReadinessStatus,
 } from "./types";
 
 // -----------------------------------------------------------------------------
@@ -129,3 +130,81 @@ export function isCommitmentTerminal(status: SupplyCommitmentStatus): boolean {
 export function isOpportunityTerminal(status: CoordinationOpportunityStatus): boolean {
   return PERMITTED_OPPORTUNITY_TRANSITIONS[status].length === 0;
 }
+
+// -----------------------------------------------------------------------------
+// 3. FULFILMENT READINESS TRANSITIONS (Phase 3.11)
+// -----------------------------------------------------------------------------
+
+export const PERMITTED_READINESS_TRANSITIONS: Record<
+  CommitmentReadinessStatus,
+  readonly CommitmentReadinessStatus[]
+> = {
+  NOT_READY: [
+    "READY_FOR_AGGREGATION",
+    "READY_FOR_PROCESSING",
+    "READY_FOR_LOGISTICS",
+    "IN_FULFILMENT",
+    "CANCELLED",
+    "FAILED",
+  ],
+  READY_FOR_AGGREGATION: [
+    "READY_FOR_PROCESSING",
+    "READY_FOR_LOGISTICS",
+    "IN_FULFILMENT",
+    "CANCELLED",
+    "FAILED",
+  ],
+  READY_FOR_PROCESSING: [
+    "READY_FOR_LOGISTICS",
+    "IN_FULFILMENT",
+    "CANCELLED",
+    "FAILED",
+  ],
+  READY_FOR_LOGISTICS: [
+    "IN_FULFILMENT",
+    "FULFILLED",
+    "PARTIALLY_FULFILLED",
+    "CANCELLED",
+    "FAILED",
+  ],
+  IN_FULFILMENT: [
+    "FULFILLED",
+    "PARTIALLY_FULFILLED",
+    "FAILED",
+    "CANCELLED",
+  ],
+  PARTIALLY_FULFILLED: [
+    "IN_FULFILMENT",
+    "FULFILLED",
+    "FAILED",
+    "CANCELLED",
+  ],
+  FULFILLED: [],  // Terminal
+  FAILED: [],     // Terminal
+  CANCELLED: [],  // Terminal
+};
+
+export function canTransitionReadiness(
+  from: CommitmentReadinessStatus,
+  to: CommitmentReadinessStatus
+): boolean {
+  if (from === to) return true;
+  const allowed = PERMITTED_READINESS_TRANSITIONS[from];
+  return Boolean(allowed && allowed.includes(to));
+}
+
+export function validateReadinessTransition(
+  from: CommitmentReadinessStatus,
+  to: CommitmentReadinessStatus
+): void {
+  if (!canTransitionReadiness(from, to)) {
+    throw new Error(
+      `Invalid fulfilment readiness state transition: cannot transition from '${from}' to '${to}'.`
+    );
+  }
+}
+
+export function isReadinessTerminal(status: CommitmentReadinessStatus): boolean {
+  return PERMITTED_READINESS_TRANSITIONS[status].length === 0;
+}
+
