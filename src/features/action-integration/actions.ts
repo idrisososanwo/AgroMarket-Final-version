@@ -7,6 +7,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { evaluateActionGovernanceGate } from "@/features/intelligence-governance/action-gate";
+import { getCurrentUser } from "@/lib/auth/server";
 import {
   createActionIntegrationSchema,
   revalidationCheckSchema,
@@ -64,6 +66,29 @@ export async function createActionIntegrationAction(
       contextPayload,
       metadata,
     } = parsed.data;
+
+    // Phase 3.8: Server-Side Governance Gate Enforcement
+    const currentUser = await getCurrentUser();
+    const actorRole = currentUser?.roles?.[0] || "BUYER";
+
+    const gateResult = await evaluateActionGovernanceGate({
+      recommendationId,
+      actionIntent,
+      actorRole,
+      domain: destinationType,
+      commodity: (contextPayload as Record<string, unknown>)?.commodity as string | undefined,
+      contextPayload: contextPayload as Record<string, unknown>,
+      userId: user.id,
+    });
+
+    if (!gateResult.isPermitted) {
+      return {
+        success: false,
+        error: `Governance Policy Block: ${gateResult.message}${
+          gateResult.blockingReason ? ` (${gateResult.blockingReason})` : ""
+        }`,
+      };
+    }
 
     const integration = await recordActionIntegration({
       userId: user.id,
