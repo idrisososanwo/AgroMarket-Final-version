@@ -91,6 +91,7 @@ export const VALID_AGROMARKET_ACTION_ROUTES = [
   "/shared-purchases",
   "/coordination",
   "/dependency-intelligence",
+  "/knowledge-graph",
   "/equipment",
   "/services",
   "/jobs",
