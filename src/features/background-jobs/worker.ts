@@ -22,7 +22,14 @@ import {
   DEFAULT_LEASE_DURATION_SECONDS,
   JOB_TIMEOUT_MS,
 } from "./constants";
-import { claimJobs, completeJob, failJob, setLastWorkerRunTimestamp } from "./data-layer";
+import {
+  claimJobs,
+  completeJob,
+  failJob,
+  setLastWorkerRunTimestamp,
+  setLastWorkerAttemptTimestamp,
+  setLastWorkerSuccessTimestamp,
+} from "./data-layer";
 import { getJobHandler } from "./handlers/registry";
 import { categorizeError } from "./validation";
 import { calculateNextRunTime } from "./backoff";
@@ -71,6 +78,7 @@ export class BackgroundJobWorker {
 
     const now = new Date();
     setLastWorkerRunTimestamp(now.toISOString());
+    setLastWorkerAttemptTimestamp(now.toISOString());
 
     for (const job of claimedJobs) {
       const handler = getJobHandler(job.jobType);
@@ -204,6 +212,8 @@ export class BackgroundJobWorker {
         });
       }
     }
+
+    setLastWorkerSuccessTimestamp(new Date().toISOString());
 
     return {
       workerId,

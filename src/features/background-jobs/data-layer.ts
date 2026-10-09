@@ -51,10 +51,14 @@ export function getAdminClientSafely(): ReturnType<typeof createAdminClient> | n
 
 const inMemoryJobs = new Map<string, BackgroundJob>();
 let lastWorkerRunTimestamp: string | null = null;
+let lastWorkerAttemptTimestamp: string | null = null;
+let lastWorkerSuccessTimestamp: string | null = null;
 
 export function resetInMemoryJobStore(): void {
   inMemoryJobs.clear();
   lastWorkerRunTimestamp = null;
+  lastWorkerAttemptTimestamp = null;
+  lastWorkerSuccessTimestamp = null;
 }
 
 export function getInMemoryJobs(): BackgroundJob[] {
@@ -69,6 +73,25 @@ export function seedInMemoryJobs(jobs: BackgroundJob[]): void {
 
 export function setLastWorkerRunTimestamp(ts: string): void {
   lastWorkerRunTimestamp = ts;
+  lastWorkerAttemptTimestamp = ts;
+  lastWorkerSuccessTimestamp = ts;
+}
+
+export function setLastWorkerAttemptTimestamp(ts: string): void {
+  lastWorkerAttemptTimestamp = ts;
+  lastWorkerRunTimestamp = ts;
+}
+
+export function setLastWorkerSuccessTimestamp(ts: string): void {
+  lastWorkerSuccessTimestamp = ts;
+}
+
+export function getLastWorkerAttemptTimestamp(): string | null {
+  return lastWorkerAttemptTimestamp ?? lastWorkerRunTimestamp;
+}
+
+export function getLastWorkerSuccessTimestamp(): string | null {
+  return lastWorkerSuccessTimestamp ?? lastWorkerRunTimestamp;
 }
 
 // -----------------------------------------------------------------------------
@@ -475,6 +498,9 @@ export async function getQueueMetrics(
     RECONCILE_SUPPLY_FULFILMENT: 0,
   };
 
+  let expiredLeasesCount = 0;
+  let maxQueueLagSeconds: number | null = null;
+
   for (const job of allJobs) {
     if (job.status === "QUEUED") {
       totalQueued++;
@@ -482,8 +508,20 @@ export async function getQueueMetrics(
       if (ageSec > oldestQueuedAgeSeconds) {
         oldestQueuedAgeSeconds = ageSec;
       }
+
+      // Eligible queue lag calculation
+      const runAfterTime = new Date(job.runAfter).getTime();
+      if (runAfterTime <= now.getTime()) {
+        const lagSec = Math.max(0, (now.getTime() - runAfterTime) / 1000);
+        if (maxQueueLagSeconds === null || lagSec > maxQueueLagSeconds) {
+          maxQueueLagSeconds = lagSec;
+        }
+      }
     } else if (job.status === "RUNNING") {
       totalRunning++;
+      if (job.leaseExpiresAt && new Date(job.leaseExpiresAt).getTime() < now.getTime()) {
+        expiredLeasesCount++;
+      }
     } else if (job.status === "SUCCEEDED") {
       totalSucceeded++;
     } else if (job.status === "FAILED") {
@@ -506,6 +544,10 @@ export async function getQueueMetrics(
     countsByType,
     oldestQueuedAgeSeconds: Math.round(oldestQueuedAgeSeconds),
     lastWorkerRunAt: lastWorkerRunTimestamp,
+    lastAttemptedWorkerRunAt: getLastWorkerAttemptTimestamp(),
+    lastSuccessfulWorkerRunAt: getLastWorkerSuccessTimestamp(),
+    expiredLeasesCount,
+    queueLagSeconds: maxQueueLagSeconds !== null ? Math.round(maxQueueLagSeconds) : null,
   };
 }
 

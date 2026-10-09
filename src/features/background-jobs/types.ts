@@ -209,4 +209,8 @@ export interface QueueMetrics {
   countsByType: Record<JobType, number>;
   oldestQueuedAgeSeconds: number;
   lastWorkerRunAt: string | null;
+  lastAttemptedWorkerRunAt?: string | null;
+  lastSuccessfulWorkerRunAt?: string | null;
+  expiredLeasesCount?: number;
+  queueLagSeconds?: number | null;
 }

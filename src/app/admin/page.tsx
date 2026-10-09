@@ -142,6 +142,21 @@ export default async function AdminConsolePage() {
                 Manage Intelligence Governance &rarr;
               </div>
             </Link>
+
+            <Link
+              href="/admin/operations"
+              className="flex flex-col justify-between rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 transition hover:border-emerald-600 hover:bg-emerald-50/20"
+            >
+              <div>
+                <div className="text-sm font-bold text-neutral-900">Platform Observability & Reliability</div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  System health checks, background job processing lag, worker cycles, notification channel availability, and reliability diagnostics.
+                </p>
+              </div>
+              <div className="mt-3 text-xs font-semibold text-emerald-700">
+                View Observability Console &rarr;
+              </div>
+            </Link>
           </div>
         </div>
       </div>
