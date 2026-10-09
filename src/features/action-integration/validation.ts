@@ -111,6 +111,7 @@ export const VALID_AGROMARKET_ACTION_ROUTES = [
   "/my-intelligence",
   "/intelligence",
   "/semantic-search",
+  "/agricultural-assistant",
 ] as const;
 
 export function isValidActionRoute(path: string): boolean {
