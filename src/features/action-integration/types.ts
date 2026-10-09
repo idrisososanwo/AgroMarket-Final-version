@@ -89,6 +89,7 @@ export const DESTINATION_TYPES = [
   "FOOD_SECURITY",
   "DISEASE_BIOSECURITY",
   "MY_INTELLIGENCE",
+  "NOTIFICATIONS",
 ] as const;
 
 export type DestinationType = (typeof DESTINATION_TYPES)[number];
