@@ -18,7 +18,7 @@
  * 14. Backward compatibility with existing NotificationService.sendNotification
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   ingestAlertEventSchema,
   assertNoProhibitedProduceNotification,
@@ -103,9 +103,14 @@ describe("AgroMarket Phase 3.16: Agricultural Intelligence Notifications", () =>
   ];
 
   beforeEach(() => {
+    vi.setSystemTime(new Date("2026-10-10T12:00:00Z"));
     resetInMemoryNotificationStore();
     resetDeliveryProviders();
     seedInMemoryCandidateUsers(sampleUsers);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ===========================================================================

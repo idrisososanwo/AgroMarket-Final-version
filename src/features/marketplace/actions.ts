@@ -391,3 +391,141 @@ export async function transitionListingStatusAction(
     };
   }
 }
+
+/**
+ * Safely removes or archives a seller produce listing.
+ * Enforces:
+ * 1. User has FARMER or BUSINESS role
+ * 2. Strict seller ownership (listing.seller_id === auth.uid())
+ * 3. Historical Order & Dispute Safety:
+ *    - If historical order_items or disputes exist referencing this listing,
+ *      hard deletion is prevented to preserve order/receipt integrity.
+ *      Instead, the listing is safely transitioned to ARCHIVED status with 0 available inventory.
+ *    - If no orders or disputes reference this listing, it is cleanly deleted
+ *      from public.listings (cascading to public.inventory).
+ */
+export async function deleteListingAction(
+  listingId: string
+): Promise<ActionResponse<{ action: "DELETED" | "ARCHIVED"; message: string }>> {
+  try {
+    const user = await requireAnyRole(["FARMER", "BUSINESS"]);
+
+    if (!listingId || typeof listingId !== "string") {
+      return { success: false, error: "Invalid listing ID provided." };
+    }
+
+    const supabase = await createClient();
+
+    // 1. Fetch listing to verify existence and ownership
+    const { data: listing, error: listErr } = await supabase
+      .from("listings")
+      .select("id, seller_id, title, status")
+      .eq("id", listingId)
+      .single();
+
+    if (listErr || !listing) {
+      return { success: false, error: "Listing not found." };
+    }
+
+    if (listing.seller_id !== user.id) {
+      return {
+        success: false,
+        error: "Unauthorized: You do not have permission to delete this listing.",
+      };
+    }
+
+    // 2. Check for historical orders referencing this listing
+    const { count: orderItemsCount, error: orderErr } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", listingId);
+
+    if (orderErr) {
+      console.error("Error checking order items for listing deletion:", orderErr);
+    }
+
+    // 3. Check for disputes referencing this listing
+    const { count: disputesCount, error: disputeErr } = await supabase
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", listingId);
+
+    if (disputeErr) {
+      console.error("Error checking disputes for listing deletion:", disputeErr);
+    }
+
+    const hasAssociatedOrders = orderItemsCount !== null && orderItemsCount > 0;
+    const hasAssociatedDisputes = disputesCount !== null && disputesCount > 0;
+
+    if (hasAssociatedOrders || hasAssociatedDisputes) {
+      // Historical references exist: Archive listing to preserve receipt & payment records
+      const { error: archiveErr } = await supabase
+        .from("listings")
+        .update({
+          status: "ARCHIVED",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", listingId)
+        .eq("seller_id", user.id);
+
+      if (archiveErr) {
+        console.error("Error archiving listing:", archiveErr);
+        return { success: false, error: archiveErr.message || "Failed to archive listing." };
+      }
+
+      // Zero-out inventory on hand so it cannot be reserved
+      await supabase
+        .from("inventory")
+        .update({
+          quantity_on_hand: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("listing_id", listingId);
+
+      revalidatePath("/marketplace");
+      revalidatePath("/farmer/listings");
+      revalidatePath(`/marketplace/${listingId}`);
+
+      const message =
+        "Listing has historical orders and was safely archived. It is delisted from the marketplace while preserving customer receipts.";
+
+      return {
+        success: true,
+        message,
+        data: { action: "ARCHIVED", message },
+      };
+    }
+
+    // No historical orders or disputes: Hard delete is completely safe
+    const { error: deleteErr } = await supabase
+      .from("listings")
+      .delete()
+      .eq("id", listingId)
+      .eq("seller_id", user.id);
+
+    if (deleteErr) {
+      console.error("Error deleting listing:", deleteErr);
+      return { success: false, error: deleteErr.message || "Failed to delete listing." };
+    }
+
+    revalidatePath("/marketplace");
+    revalidatePath("/farmer/listings");
+    revalidatePath(`/marketplace/${listingId}`);
+
+    const message = "Produce listing deleted successfully.";
+
+    return {
+      success: true,
+      message,
+      data: { action: "DELETED", message },
+    };
+  } catch (error: unknown) {
+    console.error("deleteListingAction error:", error);
+    const message =
+      error instanceof Error ? error.message : "An unexpected error occurred while deleting listing.";
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}

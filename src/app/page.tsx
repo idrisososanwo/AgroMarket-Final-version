@@ -18,7 +18,7 @@ import {
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF9F4] text-[#1A231E]">
-      {/* 1. Global Navigation Header */}
+      {/* 1. Global Navigation Header (Role-Aware) */}
       <GlobalHeader />
 
       <main className="flex-1 flex flex-col">

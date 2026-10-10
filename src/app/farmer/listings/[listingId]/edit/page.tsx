@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAnyRole } from "@/lib/auth/server";
 import { getCanonicalProducts, getMarketplaceListingById } from "@/features/marketplace/queries";
 import { ListingForm } from "@/features/marketplace/components/listing-form";
+import { DeleteListingDialog } from "@/features/marketplace/components/delete-listing-dialog";
 
 interface EditListingPageProps {
   params: Promise<{
@@ -75,6 +76,24 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           initialData={listing}
           mode="edit"
         />
+
+        {/* Danger Zone: Listing Removal */}
+        <div className="mt-8 rounded-xl border border-rose-200 bg-white p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-rose-950">Remove Produce Listing</h3>
+              <p className="mt-1 text-xs text-neutral-500 max-w-lg">
+                Delist this produce item from the marketplace. If customers have already placed orders,
+                historical order records and payment invoices will remain fully protected.
+              </p>
+            </div>
+            <DeleteListingDialog
+              listingId={listing.id}
+              listingTitle={listing.title}
+              variant="danger-card"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

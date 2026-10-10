@@ -4,6 +4,7 @@ import { getSellerListings } from "@/features/marketplace/queries";
 import { SellerInventoryControls } from "@/features/marketplace/components/seller-inventory-controls";
 import { formatNGN } from "@/features/marketplace/constants";
 import { ListingStatus } from "@/features/marketplace/types";
+import { DeleteListingDialog } from "@/features/marketplace/components/delete-listing-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -212,6 +213,11 @@ export default async function FarmerListingsPage() {
                         >
                           View Public
                         </Link>
+                        <DeleteListingDialog
+                          listingId={item.id}
+                          listingTitle={item.title}
+                          variant="table-action"
+                        />
                       </td>
                     </tr>
                   ))}

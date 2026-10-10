@@ -3,9 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, ShoppingCart, LogIn, UserPlus } from "lucide-react";
 import { AgroMarketLogo } from "@/components/brand";
 import { Button } from "./button";
+import { AuthUser } from "@/types/auth";
+import { createClient } from "@/lib/supabase/client";
 
 export interface NavItem {
   label: string;
@@ -24,11 +26,59 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 
 export interface GlobalHeaderProps {
   className?: string;
+  user?: AuthUser | null;
 }
 
-export function GlobalHeader({ className = "" }: GlobalHeaderProps) {
+export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = React.useState<AuthUser | null | undefined>(user);
+
+  React.useEffect(() => {
+    if (user !== undefined) {
+      setCurrentUser(user);
+      return;
+    }
+
+    // If user prop was not explicitly provided, safely check browser auth session
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+          supabase
+            .from("user_roles")
+            .select("role_code")
+            .eq("user_id", data.user.id)
+            .then(({ data: rolesData }) => {
+              const roles = (rolesData?.map((r) => r.role_code) || ["BUYER"]) as AuthUser["roles"];
+              setCurrentUser({
+                id: data.user.id,
+                email: data.user.email ?? null,
+                phone: null,
+                fullName: (data.user.user_metadata?.full_name as string) ?? null,
+                state: null,
+                lga: null,
+                roles,
+                isEmailVerified: Boolean(data.user.email_confirmed_at),
+                isPhoneVerified: false,
+                isVerified: false,
+                isOnboarded: true,
+                createdAt: data.user.created_at,
+              });
+            });
+        } else {
+          setCurrentUser(null);
+        }
+      });
+    } catch {
+      setCurrentUser(null);
+    }
+  }, [user]);
+
+  const roles = currentUser?.roles || [];
+  const isFarmer = roles.includes("FARMER");
+  const isEquipmentOwner = roles.includes("EQUIPMENT_OWNER");
+  const isBusiness = roles.includes("BUSINESS");
 
   return (
     <header
@@ -72,21 +122,113 @@ export function GlobalHeader({ className = "" }: GlobalHeaderProps) {
         </nav>
 
         {/* Header Right Actions */}
-        <div className="hidden sm:flex items-center space-x-3">
-          <Link href="/account">
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<User className="h-4 w-4 text-[#0F4327]" />}
-            >
-              Account
-            </Button>
-          </Link>
-          <Link href="/marketplace">
-            <Button variant="primary" size="sm">
-              Trade Produce
-            </Button>
-          </Link>
+        <div className="hidden sm:flex items-center space-x-2.5">
+          {currentUser ? (
+            /* Logged-In User Actions (Role-Aware) */
+            <>
+              {isFarmer ? (
+                <>
+                  <Link href="/farmer/listings/new">
+                    <Button variant="primary" size="sm">
+                      + Add Produce
+                    </Button>
+                  </Link>
+                  <Link href="/account?role=FARMER">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<User className="h-3.5 w-3.5 text-[#0F4327]" />}
+                    >
+                      Farmer Workspace
+                    </Button>
+                  </Link>
+                </>
+              ) : isEquipmentOwner ? (
+                <>
+                  <Link href="/equipment/owner/new">
+                    <Button variant="primary" size="sm">
+                      + Add Machinery
+                    </Button>
+                  </Link>
+                  <Link href="/account?role=EQUIPMENT_OWNER">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<User className="h-3.5 w-3.5 text-[#0F4327]" />}
+                    >
+                      Owner Console
+                    </Button>
+                  </Link>
+                </>
+              ) : isBusiness ? (
+                <>
+                  <Link href="/business">
+                    <Button variant="primary" size="sm">
+                      Agribusiness
+                    </Button>
+                  </Link>
+                  <Link href="/account?role=BUSINESS">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<User className="h-3.5 w-3.5 text-[#0F4327]" />}
+                    >
+                      Dashboard
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                /* Customer / Buyer Default */
+                <>
+                  <Link href="/cart">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<ShoppingCart className="h-3.5 w-3.5 text-[#0F4327]" />}
+                    >
+                      Cart
+                    </Button>
+                  </Link>
+                  <Link href="/account?role=BUYER">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<User className="h-3.5 w-3.5" />}
+                    >
+                      My Orders & Account
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </>
+          ) : (
+            /* Logged-Out Visitor Actions (Clear SignIn / Register / Browse) */
+            <>
+              <Link href="/marketplace">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  Browse Produce
+                </Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<LogIn className="h-3.5 w-3.5 text-[#0F4327]" />}
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<UserPlus className="h-3.5 w-3.5" />}
+                >
+                  Register
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu trigger */}
@@ -134,29 +276,79 @@ export function GlobalHeader({ className = "" }: GlobalHeaderProps) {
           </nav>
 
           <div className="pt-3 border-t border-[#E5E0D5] flex flex-col gap-2">
-            <Link
-              href="/account"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full"
-            >
-              <Button
-                variant="outline"
-                size="md"
-                className="w-full justify-center"
-                leftIcon={<User className="h-4 w-4" />}
-              >
-                Account Profile
-              </Button>
-            </Link>
-            <Link
-              href="/marketplace"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full"
-            >
-              <Button variant="primary" size="md" className="w-full justify-center">
-                Browse Marketplace
-              </Button>
-            </Link>
+            {currentUser ? (
+              <>
+                <Link
+                  href="/account"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="w-full justify-center"
+                    leftIcon={<User className="h-4 w-4" />}
+                  >
+                    My Account ({currentUser.roles[0] || "User"})
+                  </Button>
+                </Link>
+                {isFarmer && (
+                  <Link
+                    href="/farmer/listings/new"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full"
+                  >
+                    <Button variant="primary" size="md" className="w-full justify-center">
+                      + Create New Listing
+                    </Button>
+                  </Link>
+                )}
+                <Link
+                  href="/marketplace"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  <Button variant="outline" size="md" className="w-full justify-center">
+                    Browse Marketplace
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="w-full justify-center"
+                    leftIcon={<LogIn className="h-4 w-4" />}
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  <Button variant="primary" size="md" className="w-full justify-center">
+                    Register New Account
+                  </Button>
+                </Link>
+                <Link
+                  href="/marketplace"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  <Button variant="ghost" size="md" className="w-full justify-center">
+                    Browse Produce
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

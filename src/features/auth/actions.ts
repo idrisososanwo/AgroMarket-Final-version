@@ -157,10 +157,7 @@ export async function signInAction(
   }
 
   revalidatePath("/", "layout");
-  return {
-    success: true,
-    message: "Signed in successfully.",
-  };
+  redirect("/account");
 }
 
 export async function signOutAction(): Promise<void> {
