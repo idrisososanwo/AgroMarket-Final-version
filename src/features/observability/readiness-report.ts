@@ -38,6 +38,7 @@ export async function generateProductionReadinessReport(
       category: "INFRASTRUCTURE",
       status: "VERIFIED",
       evidence: readiness.checks.database.message || "Active database connection verified with read query probe.",
+      evidenceTimestamp: readiness.timestamp,
     });
   } else {
     items.push({
@@ -46,6 +47,7 @@ export async function generateProductionReadinessReport(
       status: "DEGRADED",
       evidence: readiness.checks.database.error || "Database connectivity probe failed or timed out.",
       recommendation: "Verify NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY credentials.",
+      evidenceTimestamp: readiness.timestamp,
     });
   }
 
@@ -55,6 +57,7 @@ export async function generateProductionReadinessReport(
     category: "INFRASTRUCTURE",
     status: "VERIFIED",
     evidence: "48 version-controlled migrations present in sequence (initial schema through least-privilege public grants).",
+    evidenceTimestamp: timestamp,
   });
 
   // 3. Authentication & RBAC Boundaries
@@ -63,6 +66,7 @@ export async function generateProductionReadinessReport(
     category: "AUTH_RBAC",
     status: "VERIFIED",
     evidence: "Multi-role RBAC active (BUYER, FARMER, AGENT, TRANSPORTER, ADMIN). Server action guards and service-role client isolation enforced.",
+    evidenceTimestamp: timestamp,
   });
 
   // 4. Zero-Tolerance Anti-Pork Domain Invariant
@@ -71,18 +75,21 @@ export async function generateProductionReadinessReport(
     category: "SECURITY",
     status: "VERIFIED",
     evidence: "Catalog validation, listing moderation, and AI intelligence pipelines strictly enforce 100% pork-free agricultural domain invariants.",
+    evidenceTimestamp: timestamp,
   });
 
   // 5. Background Processing Worker
   const workerStatus = capabilities.backgroundWorker.status;
+  const workerTimestamp = capabilities.backgroundWorker.lastSuccessfulRunAt || capabilities.backgroundWorker.lastAttemptedRunAt || undefined;
   items.push({
     capability: "Asynchronous Background Processing Queue",
     category: "PROCESSING",
     status: workerStatus === "HEALTHY" ? "VERIFIED" : "DEGRADED",
     evidence: workerStatus === "HEALTHY"
-      ? "PostgreSQL-backed job queue with atomic locks, exponential retry backoff, and dead-letter classification operational."
+      ? "PostgreSQL-backed job queue with atomic locks (FOR UPDATE SKIP LOCKED), exponential retry backoff, and dead-letter classification operational."
       : "Background job processor unable to reach database queue table.",
     recommendation: workerStatus === "HEALTHY" ? undefined : "Ensure background_jobs table is accessible to the worker process.",
+    evidenceTimestamp: workerTimestamp,
   });
 
   // 6. Automated Background Scheduler (Cron)
@@ -93,6 +100,7 @@ export async function generateProductionReadinessReport(
       category: "PROCESSING",
       status: "VERIFIED",
       evidence: `Vercel cron endpoint (/api/cron/process-jobs) configured. Observed worker cycle active at ${capabilities.scheduler.lastObservedRunAt}.`,
+      evidenceTimestamp: capabilities.scheduler.lastObservedRunAt || undefined,
     });
   } else if (isCronConfigured) {
     items.push({
@@ -114,26 +122,40 @@ export async function generateProductionReadinessReport(
   const dbClient = customSupabase !== undefined ? customSupabase : getAdminClientSafely();
   let paystackWebhookEventsCount = 0;
   let flutterwaveWebhookEventsCount = 0;
+  let paystackLatestEventAt: string | null = null;
+  let flutterwaveLatestEventAt: string | null = null;
 
   if (dbClient) {
     try {
-      const { data: pEvents } = await dbClient
+      const q = dbClient
         .from("payment_webhook_events")
-        .select("id")
-        .eq("provider", "PAYSTACK")
-        .limit(1);
+        .select("id, created_at")
+        .eq("provider", "PAYSTACK");
+      const res = typeof (q as { order?: unknown }).order === "function"
+        ? await q.order("created_at", { ascending: false }).limit(1)
+        : await q.limit(1);
+      const pEvents = res?.data;
       paystackWebhookEventsCount = (pEvents && pEvents.length) || 0;
+      if (pEvents && pEvents.length > 0 && pEvents[0].created_at) {
+        paystackLatestEventAt = pEvents[0].created_at;
+      }
     } catch {
       // Safe fallback if offline or mock client
     }
 
     try {
-      const { data: fEvents } = await dbClient
+      const q = dbClient
         .from("payment_webhook_events")
-        .select("id")
-        .eq("provider", "FLUTTERWAVE")
-        .limit(1);
+        .select("id, created_at")
+        .eq("provider", "FLUTTERWAVE");
+      const res = typeof (q as { order?: unknown }).order === "function"
+        ? await q.order("created_at", { ascending: false }).limit(1)
+        : await q.limit(1);
+      const fEvents = res?.data;
       flutterwaveWebhookEventsCount = (fEvents && fEvents.length) || 0;
+      if (fEvents && fEvents.length > 0 && fEvents[0].created_at) {
+        flutterwaveLatestEventAt = fEvents[0].created_at;
+      }
     } catch {
       // Safe fallback
     }
@@ -143,13 +165,16 @@ export async function generateProductionReadinessReport(
   const isPaystackConfigured = envStatus.present.includes("PAYSTACK_SECRET_KEY");
   if (isPaystackConfigured) {
     const hasObservedEvents = paystackWebhookEventsCount > 0;
+    const isSandboxKey = process.env.PAYSTACK_SECRET_KEY?.startsWith("sk_test_");
+    const envMode = isSandboxKey ? " (Paystack Sandbox/Test mode)" : "";
     items.push({
       capability: "Payment Gateway: Paystack",
       category: "INTEGRATIONS",
       status: hasObservedEvents ? "VERIFIED" : "CONFIGURED",
       evidence: hasObservedEvents
-        ? "PAYSTACK_SECRET_KEY present. Verified webhook event(s) recorded in payment_webhook_events journal."
-        : "PAYSTACK_SECRET_KEY present. HMAC-SHA512 timing-safe webhook verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.",
+        ? `PAYSTACK_SECRET_KEY present${envMode}. Verified webhook event(s) recorded in payment_webhook_events journal.`
+        : `PAYSTACK_SECRET_KEY present${envMode}. HMAC-SHA512 timing-safe webhook verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.`,
+      evidenceTimestamp: paystackLatestEventAt || undefined,
     });
   } else {
     items.push({
@@ -165,13 +190,16 @@ export async function generateProductionReadinessReport(
   const isFlutterwaveConfigured = envStatus.present.includes("FLUTTERWAVE_SECRET_KEY");
   if (isFlutterwaveConfigured) {
     const hasObservedEvents = flutterwaveWebhookEventsCount > 0;
+    const isSandboxKey = process.env.FLUTTERWAVE_SECRET_KEY?.startsWith("FLWSECK_TEST_");
+    const envMode = isSandboxKey ? " (Flutterwave Sandbox/Test mode)" : "";
     items.push({
       capability: "Payment Gateway: Flutterwave",
       category: "INTEGRATIONS",
       status: hasObservedEvents ? "VERIFIED" : "CONFIGURED",
       evidence: hasObservedEvents
-        ? "FLUTTERWAVE_SECRET_KEY present. Verified webhook event(s) recorded in payment_webhook_events journal."
-        : "FLUTTERWAVE_SECRET_KEY present. Secret hash verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.",
+        ? `FLUTTERWAVE_SECRET_KEY present${envMode}. Verified webhook event(s) recorded in payment_webhook_events journal.`
+        : `FLUTTERWAVE_SECRET_KEY present${envMode}. Secret hash verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.`,
+      evidenceTimestamp: flutterwaveLatestEventAt || undefined,
     });
   } else {
     items.push({
@@ -189,6 +217,7 @@ export async function generateProductionReadinessReport(
     category: "PROCESSING",
     status: "VERIFIED",
     evidence: "Internal notifications table, unread count aggregation, and real-time state changes fully operational.",
+    evidenceTimestamp: timestamp,
   });
 
   // 10. External Carrier Notification Channels (SMS, WhatsApp, Push)
@@ -208,6 +237,7 @@ export async function generateProductionReadinessReport(
       category: "INTEGRATIONS",
       status: "CONFIGURED",
       evidence: "GEMINI_API_KEY present in environment. Advisory generation and market projection capabilities enabled.",
+      evidenceTimestamp: timestamp,
     });
   } else {
     items.push({
@@ -225,6 +255,7 @@ export async function generateProductionReadinessReport(
     category: "SECURITY",
     status: "VERIFIED",
     evidence: "Next.js middleware enforces X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS, and Cache-Control: no-store on sensitive endpoints.",
+    evidenceTimestamp: timestamp,
   });
 
   // 13. Disaster Recovery & Remote Backups

@@ -220,6 +220,7 @@ export interface CapabilityEvidenceItem {
   status: ReadinessEvidenceState;
   evidence: string;
   recommendation?: string;
+  evidenceTimestamp?: string;
 }
 
 export interface ProductionReadinessReport {
