@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentProvider } from "./providers";
 import { PaymentProviderName, InitializePaymentResult, VerifyPaymentResult } from "./types";
 import { recordAuditLog } from "@/lib/audit";
+import { getAppBaseUrl } from "@/config/env";
 
 export class PaymentService {
   /**
@@ -100,7 +101,7 @@ export class PaymentService {
     const sanitizedOrderNum = order.order_number.replace(/[^a-zA-Z0-9]/g, "-");
     const uniqueReference = `AGRO-${sanitizedOrderNum}-${Date.now()}-${randomSuffix}`;
 
-    const defaultCallback = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/account/orders/${order.id}/payment/callback`;
+    const defaultCallback = `${getAppBaseUrl()}/account/orders/${order.id}/payment/callback`;
     const callbackUrl = params.callbackUrl || defaultCallback;
 
     // 8. Initialize transaction with selected provider

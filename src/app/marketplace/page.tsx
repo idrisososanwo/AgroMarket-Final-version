@@ -3,6 +3,7 @@ import { getMarketplaceListings, getCategories } from "@/features/marketplace/qu
 import { ListingCard } from "@/features/marketplace/components/listing-card";
 import { MarketplaceFilterBar } from "@/features/marketplace/components/marketplace-filter-bar";
 import { IntelligenceContextBanner } from "@/features/action-integration/components/intelligence-context-banner";
+import { AlertCircle } from "lucide-react";
 
 interface MarketplacePageProps {
   searchParams: Promise<{
@@ -29,7 +30,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
   const maxPrice = resolvedParams.maxPrice ? parseFloat(resolvedParams.maxPrice) : undefined;
   const activeSearch = resolvedParams.search || resolvedParams.commodity;
 
-  const [categories, { listings, totalCount, totalPages }] = await Promise.all([
+  const [categories, { listings, totalCount, totalPages, error }] = await Promise.all([
     getCategories(),
     getMarketplaceListings({
       search: activeSearch,
@@ -42,6 +43,14 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
       limit: 12,
     }),
   ]);
+
+  const hasActiveFilters = Boolean(
+    activeSearch ||
+      (resolvedParams.category && resolvedParams.category !== "all") ||
+      (resolvedParams.state && resolvedParams.state !== "all") ||
+      minPrice !== undefined ||
+      maxPrice !== undefined
+  );
 
   // Build pagination links while preserving other filters
   const buildPageUrl = (newPage: number) => {
@@ -136,21 +145,39 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
           </div>
         </div>
 
-        {/* Listings Grid */}
-        {listings.length > 0 ? (
+        {/* Listings Grid or Error / Empty State */}
+        {error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-4">
+              <AlertCircle className="h-7 w-7" />
+            </div>
+            <h3 className="text-base font-semibold text-rose-900">Unable to load produce listings</h3>
+            <p className="mt-1 text-sm text-rose-700 max-w-md mx-auto">
+              We encountered a temporary database connectivity issue while retrieving listings ({error}). Please refresh the page or try again in a few moments.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Link
+                href="/marketplace"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition"
+              >
+                Retry
+              </Link>
+            </div>
+          </div>
+        ) : listings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
-        ) : (
+        ) : hasActiveFilters ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
               <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
-            <h3 className="text-base font-semibold text-neutral-900">No active produce listings found</h3>
+            <h3 className="text-base font-semibold text-neutral-900">No matching produce listings found</h3>
             <p className="mt-1 text-sm text-neutral-500 max-w-md mx-auto">
               We couldn&apos;t find any produce matching your current search criteria or state filter. Try adjusting your filters or search keywords.
             </p>
@@ -166,6 +193,26 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
               >
                 List Produce in This Category
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-white p-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-neutral-900">No produce listings currently posted</h3>
+            <p className="mt-1 text-sm text-neutral-500 max-w-md mx-auto">
+              The marketplace catalog is open for farm-fresh agricultural stock. Verified Nigerian farmers and agribusinesses can list their harvest for buyers nationwide.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Link
+                href="/farmer/listings/new"
+                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700 shadow-sm transition"
+              >
+                + Create the First Produce Listing
               </Link>
             </div>
           </div>

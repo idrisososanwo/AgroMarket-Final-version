@@ -205,6 +205,7 @@ export async function getJobs(
       page,
       limit,
       totalPages: 0,
+      error: error.message,
     };
   }
 

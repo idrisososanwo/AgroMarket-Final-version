@@ -3,7 +3,7 @@ import { getEquipment } from "@/features/equipment/queries";
 import { EquipmentCard } from "@/features/equipment/components/equipment-card";
 import { EquipmentFilterBar } from "@/features/equipment/components/equipment-filter-bar";
 import { EquipmentCategory, EquipmentCondition } from "@/features/equipment/types";
-import { Tractor, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react";
+import { Tractor, ChevronLeft, ChevronRight, PlusCircle, AlertCircle } from "lucide-react";
 
 interface EquipmentPageProps {
   searchParams: Promise<{
@@ -37,7 +37,7 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
       ? false
       : undefined;
 
-  const { equipment, totalCount, totalPages } = await getEquipment({
+  const { equipment, totalCount, totalPages, error } = await getEquipment({
     search: resolvedParams.search,
     category:
       resolvedParams.category && resolvedParams.category !== "all"
@@ -56,6 +56,14 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
     page,
     limit: 12,
   });
+
+  const hasActiveFilters = Boolean(
+    resolvedParams.search ||
+      (resolvedParams.category && resolvedParams.category !== "all") ||
+      (resolvedParams.state && resolvedParams.state !== "all") ||
+      (resolvedParams.condition && resolvedParams.condition !== "all") ||
+      (resolvedParams.availability && resolvedParams.availability !== "all")
+  );
 
   const buildPageUrl = (newPage: number) => {
     const params = new URLSearchParams();
@@ -181,14 +189,32 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
           )}
         </div>
 
-        {/* Equipment Cards Grid or Empty State */}
-        {equipment.length > 0 ? (
+        {/* Equipment Cards Grid or Error / Empty State */}
+        {error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-4">
+              <AlertCircle className="h-7 w-7" />
+            </div>
+            <h3 className="text-base font-semibold text-rose-900">Unable to load equipment listings</h3>
+            <p className="mt-1 text-sm text-rose-700 max-w-md mx-auto">
+              We encountered a temporary database connectivity issue while retrieving equipment ({error}). Please refresh the page or try again in a few moments.
+            </p>
+            <div className="mt-6">
+              <Link
+                href="/equipment"
+                className="inline-flex items-center rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-rose-700 transition shadow-sm min-h-[44px]"
+              >
+                Retry
+              </Link>
+            </div>
+          </div>
+        ) : equipment.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {equipment.map((item) => (
               <EquipmentCard key={item.id} equipment={item} />
             ))}
           </div>
-        ) : (
+        ) : hasActiveFilters ? (
           <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
               <Tractor className="h-7 w-7" />
@@ -211,6 +237,26 @@ export default async function EquipmentPage({ searchParams }: EquipmentPageProps
                 className="inline-flex items-center rounded-xl border border-neutral-300 bg-white px-5 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition shadow-sm min-h-[44px]"
               >
                 List Equipment in this Area
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-white p-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
+              <Tractor className="h-7 w-7" />
+            </div>
+            <h3 className="mt-2 text-base font-bold text-neutral-900">
+              No farm equipment currently listed for rent
+            </h3>
+            <p className="mt-1.5 text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
+              Tractor owners, machinery operators, and commercial mechanization hubs can list tractors, combine harvesters, planters, and sprayers for hire with deposit escrow protection.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <Link
+                href="/equipment/owner/new"
+                className="inline-flex items-center rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-semibold text-white hover:bg-emerald-800 transition shadow-sm min-h-[44px]"
+              >
+                + List Farm Equipment for Rent
               </Link>
             </div>
           </div>

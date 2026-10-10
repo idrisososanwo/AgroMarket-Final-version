@@ -156,6 +156,15 @@ export default async function AccountPage() {
             ))}
           </div>
 
+          <div className="mt-4">
+            <Link
+              href="/onboarding?manage=true"
+              className="inline-flex items-center text-xs font-semibold text-primary-700 hover:text-primary-800 transition"
+            >
+              + Add or Update Ecosystem Roles (Farmer, Equipment Owner, Agribusiness) &rarr;
+            </Link>
+          </div>
+
           {/* Quick Access to Authorized Role Areas */}
           <div className="mt-6 border-t pt-4">
             <h3 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">

@@ -294,6 +294,7 @@ export interface PaginatedEquipmentResult {
   page: number;
   limit: number;
   totalPages: number;
+  error?: string | null;
 }
 
 export interface RentalFilterParams {

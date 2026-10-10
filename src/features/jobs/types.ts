@@ -250,4 +250,5 @@ export interface PaginatedJobsResult {
   page: number;
   limit: number;
   totalPages: number;
+  error?: string | null;
 }

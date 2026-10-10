@@ -237,6 +237,7 @@ export async function getEquipment(
       page,
       limit,
       totalPages: 0,
+      error: error.message,
     };
   }
 

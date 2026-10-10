@@ -11,6 +11,7 @@ export interface PaginatedMarketplaceResult {
   page: number;
   limit: number;
   totalPages: number;
+  error?: string | null;
 }
 
 interface RawListingRow {
@@ -232,6 +233,7 @@ export async function getMarketplaceListings(
       page,
       limit,
       totalPages: 0,
+      error: error.message,
     };
   }
 

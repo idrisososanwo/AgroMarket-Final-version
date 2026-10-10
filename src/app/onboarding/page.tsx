@@ -7,11 +7,18 @@ export const metadata = {
   description: "Complete your profile and select your participation roles in AgroMarket.",
 };
 
-export default async function OnboardingPage() {
-  const user = await requireAuth();
+interface OnboardingPageProps {
+  searchParams: Promise<{
+    manage?: string;
+  }>;
+}
 
-  // If the user is already onboarded, redirect directly to account dashboard
-  if (user.isOnboarded) {
+export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
+  const user = await requireAuth();
+  const resolvedParams = await searchParams;
+
+  // If the user is already onboarded and not explicitly managing roles, redirect directly to account dashboard
+  if (user.isOnboarded && resolvedParams.manage !== "true") {
     redirect("/account");
   }
 

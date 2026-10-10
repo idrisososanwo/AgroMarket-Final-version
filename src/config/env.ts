@@ -147,3 +147,23 @@ function validateEnv(): Env {
 }
 
 export const env = validateEnv();
+
+/**
+ * Resolves the canonical base application URL in priority order:
+ * 1. Explicitly configured NEXT_PUBLIC_APP_URL
+ * 2. VERCEL_PROJECT_PRODUCTION_URL (Vercel production system env)
+ * 3. VERCEL_URL (Vercel deployment system env)
+ * 4. Fallback to http://localhost:3000
+ */
+export function getAppBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim().length > 0) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL && process.env.VERCEL_PROJECT_PRODUCTION_URL.trim().length > 0) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/\/+$/, "")}`;
+  }
+  if (process.env.VERCEL_URL && process.env.VERCEL_URL.trim().length > 0) {
+    return `https://${process.env.VERCEL_URL.replace(/\/+$/, "")}`;
+  }
+  return "http://localhost:3000";
+}
