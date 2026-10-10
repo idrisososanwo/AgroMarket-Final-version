@@ -18,6 +18,7 @@ import {
   ReadinessEvidenceState,
 } from "./types";
 import { checkReadiness, checkCapabilities } from "./health";
+import { getAdminClientSafely } from "@/features/background-jobs/data-layer";
 
 export async function generateProductionReadinessReport(
   customSupabase?: SupabaseClient | null
@@ -110,14 +111,45 @@ export async function generateProductionReadinessReport(
     });
   }
 
+  const dbClient = customSupabase !== undefined ? customSupabase : getAdminClientSafely();
+  let paystackWebhookEventsCount = 0;
+  let flutterwaveWebhookEventsCount = 0;
+
+  if (dbClient) {
+    try {
+      const { data: pEvents } = await dbClient
+        .from("payment_webhook_events")
+        .select("id")
+        .eq("provider", "PAYSTACK")
+        .limit(1);
+      paystackWebhookEventsCount = (pEvents && pEvents.length) || 0;
+    } catch {
+      // Safe fallback if offline or mock client
+    }
+
+    try {
+      const { data: fEvents } = await dbClient
+        .from("payment_webhook_events")
+        .select("id")
+        .eq("provider", "FLUTTERWAVE")
+        .limit(1);
+      flutterwaveWebhookEventsCount = (fEvents && fEvents.length) || 0;
+    } catch {
+      // Safe fallback
+    }
+  }
+
   // 7. Payment Gateway: Paystack
   const isPaystackConfigured = envStatus.present.includes("PAYSTACK_SECRET_KEY");
   if (isPaystackConfigured) {
+    const hasObservedEvents = paystackWebhookEventsCount > 0;
     items.push({
       capability: "Payment Gateway: Paystack",
       category: "INTEGRATIONS",
-      status: "CONFIGURED",
-      evidence: "PAYSTACK_SECRET_KEY present. HMAC-SHA512 timing-safe webhook verification, payload size bounding, and buyer ownership validation active.",
+      status: hasObservedEvents ? "VERIFIED" : "CONFIGURED",
+      evidence: hasObservedEvents
+        ? "PAYSTACK_SECRET_KEY present. Verified webhook event(s) recorded in payment_webhook_events journal."
+        : "PAYSTACK_SECRET_KEY present. HMAC-SHA512 timing-safe webhook verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.",
     });
   } else {
     items.push({
@@ -132,11 +164,14 @@ export async function generateProductionReadinessReport(
   // 8. Payment Gateway: Flutterwave
   const isFlutterwaveConfigured = envStatus.present.includes("FLUTTERWAVE_SECRET_KEY");
   if (isFlutterwaveConfigured) {
+    const hasObservedEvents = flutterwaveWebhookEventsCount > 0;
     items.push({
       capability: "Payment Gateway: Flutterwave",
       category: "INTEGRATIONS",
-      status: "CONFIGURED",
-      evidence: "FLUTTERWAVE_SECRET_KEY present. Secret hash verification, payload size bounding, and buyer ownership validation active.",
+      status: hasObservedEvents ? "VERIFIED" : "CONFIGURED",
+      evidence: hasObservedEvents
+        ? "FLUTTERWAVE_SECRET_KEY present. Verified webhook event(s) recorded in payment_webhook_events journal."
+        : "FLUTTERWAVE_SECRET_KEY present. Secret hash verification, payload size bounding, and buyer ownership validation active. Awaiting external webhook receipt.",
     });
   } else {
     items.push({
