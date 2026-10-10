@@ -33,3 +33,9 @@ export function getPaymentProvider(name: PaymentProviderName = "PAYSTACK"): Paym
       throw new Error(`Payment provider '${name}' is not currently supported.`);
   }
 }
+
+
+export function resetPaymentProviders(): void {
+  delete providers.PAYSTACK;
+  delete providers.FLUTTERWAVE;
+}

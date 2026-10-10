@@ -61,7 +61,7 @@ export async function verifyPaymentAction(
   input: { reference: string; provider?: PaymentProviderName }
 ): Promise<ActionResponse<VerifyPaymentResult>> {
   try {
-    await requireAuth();
+    const user = await requireAuth();
 
     const parsed = verifyPaymentSchema.safeParse(input);
     if (!parsed.success) {
@@ -73,9 +73,14 @@ export async function verifyPaymentAction(
 
     const { reference, provider } = parsed.data;
 
+    // Enforce ownership: non-admin callers can only verify payments for their own orders
+    const isSuperuser = user.roles.includes("ADMIN");
+    const expectedBuyerId = isSuperuser ? undefined : user.id;
+
     const result = await PaymentService.verifyAndProcessPayment(
       reference,
-      provider as PaymentProviderName | undefined
+      provider as PaymentProviderName | undefined,
+      expectedBuyerId
     );
 
     revalidatePath("/cart");

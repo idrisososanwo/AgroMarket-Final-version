@@ -178,7 +178,8 @@ export class PaymentService {
    */
   static async verifyAndProcessPayment(
     reference: string,
-    forcedProvider?: PaymentProviderName
+    forcedProvider?: PaymentProviderName,
+    expectedBuyerId?: string
   ): Promise<VerifyPaymentResult> {
     const admin = createAdminClient();
 
@@ -191,6 +192,11 @@ export class PaymentService {
 
     if (paymentErr || !payment) {
       throw new Error(`Payment with reference '${reference}' was not found.`);
+    }
+
+    // Server-Authoritative Ownership Verification
+    if (expectedBuyerId && payment.buyer_id !== expectedBuyerId) {
+      throw new Error("Unauthorized: You do not have permission to verify or access this payment.");
     }
 
     // 2. Fetch associated order

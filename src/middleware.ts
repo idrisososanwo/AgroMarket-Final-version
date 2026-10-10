@@ -29,19 +29,47 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(prefix)
   );
 
+  let response = supabaseResponse;
+
   // 1. Unauthenticated users attempting to access protected pages
   if (isProtectedPath && !user) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(loginUrl);
+    response = NextResponse.redirect(loginUrl);
+  } else if (isAuthOnlyPath && user) {
+    // 2. Authenticated users attempting to access login or registration pages
+    response = NextResponse.redirect(new URL("/account", request.url));
   }
 
-  // 2. Authenticated users attempting to access login or registration pages
-  if (isAuthOnlyPath && user) {
-    return NextResponse.redirect(new URL("/account", request.url));
+  // 3. Production Security Headers
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
+  response.headers.set("X-DNS-Prefetch-Control", "on");
+
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
   }
 
-  return supabaseResponse;
+  // 4. Cache-Control for Sensitive & Authenticated Operations
+  const SENSITIVE_NO_CACHE_PREFIXES = [
+    "/api/cron",
+    "/api/webhooks",
+    "/admin",
+    "/account",
+    "/api/health",
+  ];
+
+  if (SENSITIVE_NO_CACHE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+  }
+
+  return response;
 }
 
 export const config = {

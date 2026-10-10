@@ -16,8 +16,14 @@ import { recordAuditLog } from "@/lib/audit";
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
-    const signature = req.headers.get("x-paystack-signature");
+    if (!rawBody || rawBody.length > 1024 * 1024) {
+      return new NextResponse("Payload invalid or exceeds 1MB limit", {
+        status: 400,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
 
+    const signature = req.headers.get("x-paystack-signature");
     const paystack = getPaymentProvider("PAYSTACK");
 
     // 1. Verify cryptographic signature
@@ -32,13 +38,19 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return new NextResponse("Invalid signature", { status: 401 });
+      return new NextResponse("Invalid signature", {
+        status: 401,
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     // 2. Parse event payload
     const parsedEvent = paystack.parseWebhookEvent(rawBody);
     if (!parsedEvent) {
-      return new NextResponse("Invalid payload", { status: 400 });
+      return new NextResponse("Invalid payload", {
+        status: 400,
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     const admin = createAdminClient();
@@ -60,7 +72,10 @@ export async function POST(req: NextRequest) {
       // Check for PostgreSQL unique constraint violation (code 23505)
       if (insertErr.code === "23505" || insertErr.message?.includes("uq_payment_webhook_provider_event")) {
         console.log(`ℹ️ Duplicate Paystack webhook event ${parsedEvent.eventId} ignored (idempotent).`);
-        return new NextResponse("Event already processed", { status: 200 });
+        return new NextResponse("Event already processed", {
+          status: 200,
+          headers: { "Cache-Control": "no-store" },
+        });
       }
 
       console.error("Failed to journal webhook event:", insertErr);
@@ -82,12 +97,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return new NextResponse("Webhook processed successfully", { status: 200 });
+    return new NextResponse("Webhook processed successfully", {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error: unknown) {
-    console.error("Paystack webhook error:", error);
-    const message = error instanceof Error ? error.message : "Internal error";
-    // Return 200 to acknowledge webhook if business error to avoid endless retry storm,
-    // but log the incident
-    return new NextResponse(`Processed with error: ${message}`, { status: 200 });
+    console.error("Paystack webhook processing error:", error);
+    // Never leak stack traces or internal errors to webhook callers
+    return new NextResponse("Webhook processing error", {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

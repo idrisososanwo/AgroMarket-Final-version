@@ -34,3 +34,27 @@ export async function getOperationalDashboardAction(): Promise<{
     };
   }
 }
+
+export async function getProductionReadinessReportAction(): Promise<{
+  success: boolean;
+  data?: import("./types").ProductionReadinessReport;
+  error?: string;
+}> {
+  try {
+    // Strict Administrator Authentication Barrier
+    await requireRole("ADMIN");
+
+    const data = await ObservabilityService.getProductionReadinessReport();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      error: sanitizeErrorMessage(errorMsg),
+    };
+  }
+}
+

@@ -11,8 +11,14 @@ import { recordAuditLog } from "@/lib/audit";
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
-    const signature = req.headers.get("verif-hash");
+    if (!rawBody || rawBody.length > 1024 * 1024) {
+      return new NextResponse("Payload invalid or exceeds 1MB limit", {
+        status: 400,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
 
+    const signature = req.headers.get("verif-hash");
     const flutterwave = getPaymentProvider("FLUTTERWAVE");
 
     // 1. Verify verif-hash secret
@@ -27,13 +33,19 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return new NextResponse("Invalid signature", { status: 401 });
+      return new NextResponse("Invalid signature", {
+        status: 401,
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     // 2. Parse event payload
     const parsedEvent = flutterwave.parseWebhookEvent(rawBody);
     if (!parsedEvent) {
-      return new NextResponse("Invalid payload", { status: 400 });
+      return new NextResponse("Invalid payload", {
+        status: 400,
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     const admin = createAdminClient();
@@ -53,7 +65,10 @@ export async function POST(req: NextRequest) {
     if (insertErr) {
       if (insertErr.code === "23505" || insertErr.message?.includes("uq_payment_webhook_provider_event")) {
         console.log(`ℹ️ Duplicate Flutterwave webhook event ${parsedEvent.eventId} ignored (idempotent).`);
-        return new NextResponse("Event already processed", { status: 200 });
+        return new NextResponse("Event already processed", {
+          status: 200,
+          headers: { "Cache-Control": "no-store" },
+        });
       }
       console.error("Failed to journal Flutterwave webhook event:", insertErr);
     }
@@ -63,10 +78,16 @@ export async function POST(req: NextRequest) {
       await PaymentService.verifyAndProcessPayment(parsedEvent.reference, "FLUTTERWAVE");
     }
 
-    return new NextResponse("Webhook processed successfully", { status: 200 });
+    return new NextResponse("Webhook processed successfully", {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error: unknown) {
-    console.error("Flutterwave webhook error:", error);
-    const message = error instanceof Error ? error.message : "Internal error";
-    return new NextResponse(`Processed with error: ${message}`, { status: 200 });
+    console.error("Flutterwave webhook processing error:", error);
+    // Never leak stack traces or internal errors to webhook callers
+    return new NextResponse("Webhook processing error", {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

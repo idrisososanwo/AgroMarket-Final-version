@@ -8,10 +8,12 @@ import {
   OperationalDashboardData,
   ReliabilityThresholds,
   HealthStatus,
+  ProductionReadinessReport,
 } from "./types";
 import { checkLiveness, checkReadiness, checkCapabilities } from "./health";
 import { getQueueReliabilityMetrics, getNotificationReliabilityMetrics } from "./metrics";
 import { evaluateReliabilityThresholds } from "./thresholds";
+import { generateProductionReadinessReport } from "./readiness-report";
 
 export class ObservabilityService {
   /**
@@ -65,5 +67,14 @@ export class ObservabilityService {
       thresholdEvaluation,
       unmeasuredMetrics,
     };
+  }
+
+  /**
+   * Generates an honest, evidence-based Production Readiness Report (Phase 3.19).
+   */
+  static async getProductionReadinessReport(options?: {
+    customSupabase?: SupabaseClient | null;
+  }): Promise<ProductionReadinessReport> {
+    return generateProductionReadinessReport(options?.customSupabase);
   }
 }

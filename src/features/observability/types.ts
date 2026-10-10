@@ -202,3 +202,37 @@ export interface OperationalLogEntry {
   retryable: boolean;
   metadata?: Record<string, unknown>;
 }
+
+// -----------------------------------------------------------------------------
+// 9. PRODUCTION READINESS EVIDENCE ASSESSMENT (PHASE 3.19)
+// -----------------------------------------------------------------------------
+
+export type ReadinessEvidenceState =
+  | "VERIFIED"     // Proven operational via active test, runtime execution, or local verification
+  | "CONFIGURED"   // Credentials/keys present in environment, but external traffic/gateway unverified
+  | "UNAVAILABLE"  // Known unconfigured or disabled subsystem / external provider
+  | "UNKNOWN"      // Remote cloud state or third-party service status cannot be verified from runner
+  | "DEGRADED";    // Operating with errors, backlog, or known failure conditions
+
+export interface CapabilityEvidenceItem {
+  capability: string;
+  category: "INFRASTRUCTURE" | "AUTH_RBAC" | "PROCESSING" | "INTEGRATIONS" | "SECURITY" | "DISASTER_RECOVERY";
+  status: ReadinessEvidenceState;
+  evidence: string;
+  recommendation?: string;
+}
+
+export interface ProductionReadinessReport {
+  timestamp: string;
+  environment: string;
+  overallState: ReadinessEvidenceState;
+  capabilities: CapabilityEvidenceItem[];
+  counts: {
+    verified: number;
+    configured: number;
+    unavailable: number;
+    unknown: number;
+    degraded: number;
+  };
+  summary: string;
+}
