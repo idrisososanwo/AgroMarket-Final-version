@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
-import { getBuyerOrders } from "@/features/orders/queries";
+import { getBuyerOrdersResult } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
-import { OrderStatus } from "@/features/orders/types";
+import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -10,56 +10,9 @@ export const metadata = {
   title: "My Orders | AgroMarket",
 };
 
-export function getOrderStatusBadge(status: OrderStatus) {
-  switch (status) {
-    case "PENDING":
-      return (
-        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
-          Pending
-        </span>
-      );
-    case "PAID":
-      return (
-        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/20">
-          Paid (Escrow)
-        </span>
-      );
-    case "PROCESSING":
-      return (
-        <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-purple-600/20">
-          Processing
-        </span>
-      );
-    case "PARTIALLY_FULFILLED":
-      return (
-        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-          Partially Fulfilled
-        </span>
-      );
-    case "COMPLETED":
-      return (
-        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-          Completed
-        </span>
-      );
-    case "CANCELLED":
-      return (
-        <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-neutral-600 ring-1 ring-inset ring-neutral-500/20">
-          Cancelled
-        </span>
-      );
-    case "DISPUTED":
-      return (
-        <span className="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20">
-          Disputed
-        </span>
-      );
-  }
-}
-
 export default async function BuyerOrdersPage() {
   const user = await requireAuth();
-  const orders = await getBuyerOrders(user.id);
+  const { orders, error } = await getBuyerOrdersResult(user.id);
 
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
@@ -91,6 +44,19 @@ export default async function BuyerOrdersPage() {
             Browse Marketplace
           </Link>
         </div>
+
+        {/* Database Error Banner */}
+        {error && (
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-xs text-rose-800 flex items-start gap-3">
+            <svg className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-semibold text-rose-900">Unable to load orders</p>
+              <p className="mt-0.5 text-rose-700">A temporary service error occurred while retrieving order history.</p>
+            </div>
+          </div>
+        )}
 
         {/* Orders List */}
         {orders.length > 0 ? (

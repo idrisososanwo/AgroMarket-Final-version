@@ -99,9 +99,11 @@ function mapOrderRow(row: RawOrderRow): OrderDetail {
 }
 
 /**
- * Retrieves order history for the authenticated buyer.
+ * Retrieves order history for the authenticated buyer with error tracking.
  */
-export async function getBuyerOrders(buyerId?: string): Promise<OrderDetail[]> {
+export async function getBuyerOrdersResult(
+  buyerId?: string
+): Promise<{ orders: OrderDetail[]; error?: string | null }> {
   const supabase = await createClient();
 
   let targetBuyerId = buyerId;
@@ -109,7 +111,7 @@ export async function getBuyerOrders(buyerId?: string): Promise<OrderDetail[]> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return [];
+    if (!user) return { orders: [], error: null };
     targetBuyerId = user.id;
   }
 
@@ -157,18 +159,33 @@ export async function getBuyerOrders(buyerId?: string): Promise<OrderDetail[]> {
     .eq("buyer_id", targetBuyerId)
     .order("created_at", { ascending: false });
 
-  if (error || !data) {
+  if (error) {
     console.error("Error fetching buyer orders:", error);
-    return [];
+    return { orders: [], error: error.message };
   }
 
-  return ((data as unknown as RawOrderRow[]) || []).map(mapOrderRow);
+  return {
+    orders: ((data as unknown as RawOrderRow[]) || []).map(mapOrderRow),
+    error: null,
+  };
 }
 
 /**
- * Retrieves a single order by ID with all item snapshots and seller metadata.
+ * Retrieves order history for the authenticated buyer.
  */
-export async function getOrderById(orderId: string): Promise<OrderDetail | null> {
+export async function getBuyerOrders(buyerId?: string): Promise<OrderDetail[]> {
+  const result = await getBuyerOrdersResult(buyerId);
+  return result.orders;
+}
+
+/**
+ * Retrieves a single order by ID with all item snapshots and seller metadata,
+ * providing explicit error status so callers can differentiate database/RLS errors
+ * from genuine non-existence (404).
+ */
+export async function getOrderDetailsResult(
+  orderId: string
+): Promise<{ order: OrderDetail | null; error?: string | null }> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -220,11 +237,24 @@ export async function getOrderById(orderId: string): Promise<OrderDetail | null>
     .eq("id", orderId)
     .maybeSingle();
 
-  if (error || !data) {
-    return null;
+  if (error) {
+    console.error("Error fetching order by ID:", error);
+    return { order: null, error: error.message };
   }
 
-  return mapOrderRow(data as unknown as RawOrderRow);
+  if (!data) {
+    return { order: null, error: null };
+  }
+
+  return { order: mapOrderRow(data as unknown as RawOrderRow), error: null };
+}
+
+/**
+ * Retrieves a single order by ID with all item snapshots and seller metadata.
+ */
+export async function getOrderById(orderId: string): Promise<OrderDetail | null> {
+  const result = await getOrderDetailsResult(orderId);
+  return result.order;
 }
 
 export interface SellerOrderItemRecord {
@@ -247,12 +277,11 @@ export interface SellerOrderItemRecord {
 }
 
 /**
- * Retrieves incoming orders containing items belonging to the authenticated seller.
- * Strictly scopes visibility so sellers only view their own items.
+ * Retrieves incoming orders containing items belonging to the authenticated seller with error tracking.
  */
-export async function getSellerOrders(
+export async function getSellerOrdersResult(
   sellerId?: string
-): Promise<SellerOrderItemRecord[]> {
+): Promise<{ orders: SellerOrderItemRecord[]; error?: string | null }> {
   const supabase = await createClient();
 
   let targetSellerId = sellerId;
@@ -260,7 +289,7 @@ export async function getSellerOrders(
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return [];
+    if (!user) return { orders: [], error: null };
     targetSellerId = user.id;
   }
 
@@ -295,9 +324,13 @@ export async function getSellerOrders(
     .eq("seller_id", targetSellerId)
     .order("created_at", { ascending: false });
 
-  if (error || !data) {
+  if (error) {
     console.error("Error fetching seller order items:", error);
-    return [];
+    return { orders: [], error: error.message };
+  }
+
+  if (!data) {
+    return { orders: [], error: null };
   }
 
   interface RawSellerOrderItemQueryRow {
@@ -325,7 +358,9 @@ export async function getSellerOrders(
     } | null;
   }
 
-  return ((data as unknown as RawSellerOrderItemQueryRow[]) || []).map((row) => {
+  const orders: SellerOrderItemRecord[] = (
+    (data as unknown as RawSellerOrderItemQueryRow[]) || []
+  ).map((row) => {
     const order = row.orders;
     const buyer = order?.profiles;
 
@@ -348,4 +383,17 @@ export async function getSellerOrders(
       buyerName: buyer?.full_name || "Buyer",
     };
   });
+
+  return { orders, error: null };
+}
+
+/**
+ * Retrieves incoming orders containing items belonging to the authenticated seller.
+ * Strictly scopes visibility so sellers only view their own items.
+ */
+export async function getSellerOrders(
+  sellerId?: string
+): Promise<SellerOrderItemRecord[]> {
+  const result = await getSellerOrdersResult(sellerId);
+  return result.orders;
 }

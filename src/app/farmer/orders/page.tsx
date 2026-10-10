@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAnyRole } from "@/lib/auth/server";
 import { getSellerOrders } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
-import { getOrderStatusBadge } from "@/app/account/orders/page";
+import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 
 export const dynamic = "force-dynamic";
 

@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
-import { getOrderById } from "@/features/orders/queries";
+import { getOrderDetailsResult } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
-import { getOrderStatusBadge } from "../page";
+import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 import { OrderCancelButton } from "@/features/orders/components/order-cancel-button";
 
 interface OrderDetailPageProps {
@@ -21,7 +21,33 @@ export const metadata = {
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const user = await requireAuth();
   const { orderId } = await params;
-  const order = await getOrderById(orderId);
+  const { order, error } = await getOrderDetailsResult(orderId);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-neutral-50/70 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-lg rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600 mb-4">
+            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-lg font-bold text-neutral-900">Unable to load order details</h1>
+          <p className="mt-2 text-xs text-neutral-500">
+            A temporary system error occurred while retrieving order information: {error}
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link
+              href="/account/orders"
+              className="rounded-xl border border-neutral-300 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition"
+            >
+              Back to My Orders
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     notFound();
