@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, User, ShoppingCart, LogIn, UserPlus, Tractor, ShoppingBag, PlusCircle, ArrowLeftRight } from "lucide-react";
+import { Menu, X, User, ShoppingCart, LogIn, UserPlus, Tractor, ShoppingBag, PlusCircle, ArrowLeftRight, Wrench } from "lucide-react";
 import { AgroMarketLogo } from "@/components/brand";
 import { Button } from "./button";
 import { AuthUser } from "@/types/auth";
@@ -87,13 +87,21 @@ export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
   const roles = currentUser?.roles || [];
   const isFarmer = roles.includes("FARMER");
   const isEquipmentOwner = roles.includes("EQUIPMENT_OWNER");
+  const isServiceProvider = roles.includes("SERVICE_PROVIDER") || roles.includes("EXPERT");
   const isBusiness = roles.includes("BUSINESS");
 
-  // Determine if active view is in farmer workspace
+  // Determine if active view is in farmer workspace or provider workspace
   const isInsideFarmerWorkspace = pathname?.startsWith("/farmer");
+  const isInsideProviderWorkspace =
+    pathname?.startsWith("/equipment/owner") ||
+    pathname?.startsWith("/services/provider") ||
+    pathname?.startsWith("/service-provider") ||
+    pathname?.startsWith("/business");
 
   // Determine active primary navigation
-  const activeNavItems = isInsideFarmerWorkspace ? FARMER_NAV_ITEMS : PRIMARY_BUYER_NAV_ITEMS;
+  const activeNavItems = isInsideFarmerWorkspace
+    ? FARMER_NAV_ITEMS
+    : PRIMARY_BUYER_NAV_ITEMS;
 
   return (
     <header
@@ -105,12 +113,17 @@ export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
           <AgroMarketLogo
             size="md"
             layout="horizontal"
-            href={isInsideFarmerWorkspace ? "/farmer" : "/"}
+            href={isInsideFarmerWorkspace ? "/farmer" : (isInsideProviderWorkspace ? "/service-provider" : "/")}
             className="hover:opacity-90"
           />
           {isInsideFarmerWorkspace && (
             <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
               Farmer Console
+            </span>
+          )}
+          {isInsideProviderWorkspace && (
+            <span className="hidden sm:inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">
+              Provider Console
             </span>
           )}
         </div>
@@ -154,7 +167,39 @@ export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
                       Add Produce
                     </Button>
                   </Link>
-                  <Link href="/marketplace">
+                  <Link href="/">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<ShoppingBag className="h-3.5 w-3.5 text-neutral-600" />}
+                    >
+                      Shopping Mode
+                    </Button>
+                  </Link>
+                  <Link href="/cart">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs px-2"
+                      title="View Shopping Cart"
+                    >
+                      <ShoppingCart className="h-4 w-4 text-[#0F4327]" />
+                    </Button>
+                  </Link>
+                  <Link href="/account">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<User className="h-3.5 w-3.5 text-[#0F4327]" />}
+                    >
+                      Account
+                    </Button>
+                  </Link>
+                </>
+              ) : isInsideProviderWorkspace ? (
+                /* Inside Provider Workspace: Show Switch to Shopping + Account */
+                <>
+                  <Link href="/">
                     <Button
                       variant="outline"
                       size="sm"
@@ -193,24 +238,35 @@ export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
                         variant="outline"
                         size="sm"
                         leftIcon={<Tractor className="h-3.5 w-3.5 text-emerald-700" />}
-                        className="border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+                        className="border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 font-bold"
                       >
                         Farmer Workspace
                       </Button>
                     </Link>
                   )}
-                  {isEquipmentOwner && !isFarmer && (
+                  {isEquipmentOwner && (
                     <Link href="/equipment/owner">
                       <Button
                         variant="outline"
                         size="sm"
                         leftIcon={<Tractor className="h-3.5 w-3.5 text-[#0F4327]" />}
                       >
-                        Owner Console
+                        Machinery Console
                       </Button>
                     </Link>
                   )}
-                  {isBusiness && !isFarmer && (
+                  {isServiceProvider && (
+                    <Link href="/services/provider">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Wrench className="h-3.5 w-3.5 text-[#0F4327]" />}
+                      >
+                        Services Console
+                      </Button>
+                    </Link>
+                  )}
+                  {isBusiness && !isEquipmentOwner && !isServiceProvider && (
                     <Link href="/business">
                       <Button variant="outline" size="sm">
                         Agribusiness
@@ -226,7 +282,7 @@ export function GlobalHeader({ className = "", user }: GlobalHeaderProps) {
                       Cart
                     </Button>
                   </Link>
-                  <Link href="/account?role=BUYER">
+                  <Link href="/account">
                     <Button
                       variant="primary"
                       size="sm"

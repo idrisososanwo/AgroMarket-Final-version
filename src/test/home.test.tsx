@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import HomePage from "@/app/page";
 
@@ -15,109 +14,132 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-describe("AgroMarket Public Homepage", () => {
-  it("renders the global header and brand logo", () => {
-    render(<HomePage />);
+// Mock auth server helper
+vi.mock("@/lib/auth/server", () => ({
+  getCurrentUser: vi.fn().mockResolvedValue(null),
+}));
+
+// Mock marketplace queries
+vi.mock("@/features/marketplace/queries", () => ({
+  getMarketplaceListings: vi.fn().mockResolvedValue({
+    listings: [
+      {
+        id: "sample-maize",
+        sellerId: "seller-1",
+        productId: "prod-1",
+        title: "Dry White Grain Maize (Bulk Harvest)",
+        productName: "White Maize",
+        categoryName: "Grains & Cereals",
+        pricePerUnit: 450,
+        currency: "NGN",
+        unit: "kg",
+        minimumOrderQuantity: 100,
+        state: "Kaduna",
+        lga: "Zaria",
+        status: "ACTIVE",
+        isVerified: true,
+        quantityAvailable: 500,
+        sellerName: "Ibrahim Farms",
+        sellerVerified: true,
+      },
+    ],
+    totalCount: 1,
+    page: 1,
+    limit: 8,
+    totalPages: 1,
+  }),
+  getCategories: vi.fn().mockResolvedValue([
+    { id: "cat-1", name: "Grains & Cereals", slug: "grains-cereals" },
+    { id: "cat-2", name: "Tubers & Roots", slug: "roots-tubers" },
+  ]),
+}));
+
+describe("AgroMarket StackFood-Inspired Consumer Marketplace Homepage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders the global navigation header with AgroMarket branding", async () => {
+    const Component = await HomePage();
+    render(Component);
     const logoLinks = screen.getAllByRole("link", { name: /AgroMarket/i });
     expect(logoLinks.length).toBeGreaterThan(0);
   });
 
-  it("renders the hero section with primary headline and valid CTAs", () => {
-    render(<HomePage />);
+  it("renders the consumer shopping hero section with fresh produce headline", async () => {
+    const Component = await HomePage();
+    render(Component);
     expect(
       screen.getByRole("heading", {
-        name: /Connecting the systems that move agriculture forward/i,
+        name: /Fresh Farm Produce, Straight from the Soil/i,
       })
     ).toBeDefined();
 
-    const exploreAgroMarketBtns = screen.getAllByRole("link", {
-      name: /Explore AgroMarket/i,
+    const shopProduceBtn = screen.getByRole("link", {
+      name: /Shop Fresh Produce/i,
     });
-    expect(exploreAgroMarketBtns.length).toBeGreaterThan(0);
-    expect(exploreAgroMarketBtns[0].getAttribute("href")).toBe("/marketplace");
+    expect(shopProduceBtn.getAttribute("href")).toBe("/marketplace");
+  });
 
-    const exploreEcosystemBtns = screen.getAllByRole("link", {
-      name: /Explore Ecosystem/i,
+  it("renders consumer produce search bar and quick filter tags", async () => {
+    const Component = await HomePage();
+    render(Component);
+    const searchInput = screen.getByPlaceholderText(
+      /Search fresh produce \(e\.g\. Yam, White Maize, Cassava, Soya\)\.\.\./i
+    );
+    expect(searchInput).toBeDefined();
+
+    expect(screen.getByText(/Popular:/i)).toBeDefined();
+    expect(screen.getByText(/🌾 White Maize/i)).toBeDefined();
+    expect(screen.getByText(/🥔 Benue Yam/i)).toBeDefined();
+  });
+
+  it("renders the category discovery grid for Nigerian agricultural sectors", async () => {
+    const Component = await HomePage();
+    render(Component);
+    expect(screen.getByText("Explore Agricultural Categories")).toBeDefined();
+    expect(screen.getAllByText("Grains & Cereals").length).toBeGreaterThan(0);
+    expect(screen.getByText("Tubers & Roots")).toBeDefined();
+    expect(screen.getByText("Vegetables & Herbs")).toBeDefined();
+    expect(screen.getByText("Livestock & Poultry")).toBeDefined();
+  });
+
+  it("renders featured agricultural produce with live farm-gate cards", async () => {
+    const Component = await HomePage();
+    render(Component);
+    expect(screen.getByText("Featured Agricultural Produce")).toBeDefined();
+    expect(
+      screen.getByText("Dry White Grain Maize (Bulk Harvest)")
+    ).toBeDefined();
+    expect(screen.getAllByText("Kaduna").length).toBeGreaterThan(0);
+  });
+
+  it("renders the transparent 4-step buying workflow with escrow guarantee", async () => {
+    const Component = await HomePage();
+    render(Component);
+    expect(screen.getByText("How Buying Works on AgroMarket")).toBeDefined();
+    expect(screen.getByText("Discover Produce")).toBeDefined();
+    expect(screen.getByText("Farm-Gate Pricing")).toBeDefined();
+    expect(screen.getByText("Escrow Protected")).toBeDefined();
+    expect(screen.getByText("Tracked Dispatch")).toBeDefined();
+  });
+
+  it("renders secondary seller callout for farmers and machinery owners", async () => {
+    const Component = await HomePage();
+    render(Component);
+    expect(
+      screen.getByText("Are You a Producer or Machinery Owner?")
+    ).toBeDefined();
+    const joinFarmerLink = screen.getByRole("link", {
+      name: /Join as Farmer/i,
     });
-    expect(exploreEcosystemBtns.length).toBeGreaterThan(0);
-    expect(exploreEcosystemBtns[0].getAttribute("href")).toBe("/ecosystem");
+    expect(joinFarmerLink.getAttribute("href")).toBe("/auth/register?role=FARMER");
   });
 
-  it("renders capability strip without fabricating traction numbers", () => {
-    render(<HomePage />);
-    expect(screen.getAllByText("Production").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Aggregation").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Processing").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Logistics").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Markets").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Intelligence").length).toBeGreaterThan(0);
-  });
-
-  it("renders the agricultural problem and transition to Agro Network", () => {
-    render(<HomePage />);
-    expect(
-      screen.getByText(/Agriculture is connected in the real world, but disconnected digitally/i)
-    ).toBeDefined();
-    expect(screen.getByText("The AgroMarket Coordinated Network")).toBeDefined();
-  });
-
-  it("renders the Agro Network diagram with key stakeholder nodes", () => {
-    render(<HomePage />);
-    expect(screen.getByText("A Unified Infrastructure Map for Nigerian Agriculture")).toBeDefined();
-    expect(screen.getAllByText("Producers & Farmers").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Commercial Buyers").length).toBeGreaterThan(0);
-  });
-
-  it("renders the value chain pipeline and commodity sectors", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Supporting the Entire Agricultural Journey")).toBeDefined();
-    expect(screen.getAllByText("Crops & Grains").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Roots & Tubers").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Livestock & Cattle").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Aquaculture & Fish").length).toBeGreaterThan(0);
-  });
-
-  it("renders platform capability links with verified routes", () => {
-    render(<HomePage />);
-    expect(screen.getAllByText(/Produce Marketplace|Marketplace/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Shared Purchases").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Equipment Rental").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Agricultural Services").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Jobs & Labor").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Knowledge & Advisories").length).toBeGreaterThan(0);
-  });
-
-  it("renders the agricultural intelligence section with human-in-the-loop governance", () => {
-    render(<HomePage />);
-    expect(
-      screen.getByRole("heading", {
-        name: /Agricultural Intelligence for Complex Systems/i,
-      })
-    ).toBeDefined();
-    expect(screen.getByText(/Human-In-The-Loop Governance/i)).toBeDefined();
-    expect(screen.getAllByText("Market Intelligence").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Food Security & Resilience").length).toBeGreaterThan(0);
-  });
-
-  it("renders the food security section and Nigeria-first realities", () => {
-    render(<HomePage />);
-    expect(screen.getByText("Building Resilience into the Agricultural System")).toBeDefined();
-    expect(screen.getByText("Built for the Realities of Nigerian Agriculture")).toBeDefined();
-    expect(screen.getByText(/States & Local Government Corridors/i)).toBeDefined();
-  });
-
-  it("renders audience sections for farmers, businesses, and ecosystem partners", () => {
-    render(<HomePage />);
-    expect(screen.getByRole("heading", { name: "For Farmers" })).toBeDefined();
-    expect(screen.getByRole("heading", { name: "For Businesses & Processors" })).toBeDefined();
-    expect(screen.getByText("An Asset-Light Agricultural Coordination Network")).toBeDefined();
-  });
-
-  it("renders final CTA and footer with design system spec link", () => {
-    render(<HomePage />);
-    const ctaHeadings = screen.getAllByRole("heading", { name: /Move Agriculture Forward/i });
-    expect(ctaHeadings.length).toBeGreaterThan(0);
-    const specLinks = screen.getAllByRole("link", { name: /Design System/i });
-    expect(specLinks.length).toBeGreaterThan(0);
+  it("renders professional marketplace footer with category and support links", async () => {
+    const Component = await HomePage();
+    render(Component);
+    const footerElements = screen.getAllByRole("contentinfo");
+    expect(footerElements.length).toBeGreaterThan(0);
   });
 });

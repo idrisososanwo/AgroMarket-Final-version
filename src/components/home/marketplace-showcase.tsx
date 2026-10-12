@@ -1,89 +1,33 @@
+"use client";
+
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ShoppingBag } from "lucide-react";
+import { MarketplaceListing } from "@/features/marketplace/types";
+import { ListingCard } from "@/features/marketplace/components/listing-card";
 
-interface HighlightProduce {
-  id: string;
-  title: string;
-  productName: string;
-  categoryName: string;
-  pricePerUnit: number;
-  unit: string;
-  minimumOrderQuantity: number;
-  state: string;
-  lga: string;
-  inStock: boolean;
+interface MarketplaceShowcaseProps {
+  listings: MarketplaceListing[];
 }
 
-const SAMPLE_HIGHLIGHT_PRODUCE: HighlightProduce[] = [
-  {
-    id: "sample-yam",
-    title: "Premium Grade-A Benue Yam Tubers",
-    productName: "Yam Tubers",
-    categoryName: "Roots & Tubers",
-    pricePerUnit: 2500,
-    unit: "TUBER",
-    minimumOrderQuantity: 50,
-    state: "Benue",
-    lga: "Gboko",
-    inStock: true,
-  },
-  {
-    id: "sample-maize",
-    title: "Dry White Grain Maize (Bulk Harvest)",
-    productName: "White Maize",
-    categoryName: "Grains & Cereals",
-    pricePerUnit: 450,
-    unit: "KG",
-    minimumOrderQuantity: 100,
-    state: "Kaduna",
-    lga: "Zaria",
-    inStock: true,
-  },
-  {
-    id: "sample-tomatoes",
-    title: "Farm-Fresh Round Plum Tomatoes (Jos Harvest)",
-    productName: "Plum Tomatoes",
-    categoryName: "Vegetables & Herbs",
-    pricePerUnit: 850,
-    unit: "KG",
-    minimumOrderQuantity: 25,
-    state: "Plateau",
-    lga: "Jos South",
-    inStock: true,
-  },
-  {
-    id: "sample-soybean",
-    title: "Processed Oil-Grade Soybeans",
-    productName: "Soybeans",
-    categoryName: "Legumes & Pulses",
-    pricePerUnit: 620,
-    unit: "KG",
-    minimumOrderQuantity: 200,
-    state: "Kano",
-    lga: "Dawanau",
-    inStock: true,
-  },
-];
-
-export function MarketplaceShowcase() {
+export function MarketplaceShowcase({ listings }: MarketplaceShowcaseProps) {
   return (
-    <section className="py-14 md:py-20 bg-white border-b border-[#E5E0D5]/70">
+    <section id="marketplace-produce" className="py-14 md:py-20 bg-white border-b border-[#E5E0D5]/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                Fresh Produce Marketplace
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                Fresh Harvests Catalog
               </span>
-              <span className="text-xs text-neutral-500">Live Farm Gate Listings</span>
+              <span className="text-xs text-neutral-500">Real Farm-Gate Listings</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-[#1A231E] tracking-tight">
               Featured Agricultural Produce
             </h2>
             <p className="text-sm text-neutral-600 mt-1 max-w-xl">
-              Fresh harvests and wholesale produce available directly from verified Nigerian smallholders and commercial farms.
+              Fresh seasonal crops and livestock listed directly by verified Nigerian smallholders and commercial farms.
             </p>
           </div>
 
@@ -95,63 +39,41 @@ export function MarketplaceShowcase() {
           </Link>
         </div>
 
-        {/* Product Cards Grid (StackFood-inspired Produce Display) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {SAMPLE_HIGHLIGHT_PRODUCE.map((prod) => (
-            <div
-              key={prod.id}
-              className="group rounded-2xl border border-neutral-200 bg-[#FBF9F4] p-5 shadow-xs transition hover:border-[#0F4327] hover:shadow-md hover:bg-white flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
-                    {prod.categoryName}
-                  </span>
-                  <span className="text-neutral-500 font-medium">
-                    {prod.state}, NG
-                  </span>
-                </div>
-
-                <h3 className="font-bold text-base text-[#1A231E] group-hover:text-[#0F4327] transition line-clamp-2 leading-snug">
-                  {prod.title}
-                </h3>
-                <div className="text-xs text-neutral-500 mt-1">
-                  Canonical: {prod.productName}
-                </div>
-
-                {/* Price & MOQ Block */}
-                <div className="mt-4 rounded-xl bg-white border border-neutral-100 p-3">
-                  <div className="text-xs text-neutral-500">Price per Unit</div>
-                  <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-xl font-black text-neutral-900">
-                      ₦{prod.pricePerUnit.toLocaleString()}
-                    </span>
-                    <span className="text-xs font-semibold text-neutral-600">
-                      / {prod.unit}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-neutral-500 mt-1">
-                    Min Order: {prod.minimumOrderQuantity} {prod.unit}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-neutral-200/70 flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Ready to Dispatch
-                </span>
-
-                <Link
-                  href="/marketplace"
-                  className="inline-flex items-center text-xs font-bold text-[#0F4327] group-hover:underline"
-                >
-                  View Details &rarr;
-                </Link>
-              </div>
+        {/* Real Product Cards Grid */}
+        {listings && listings.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {listings.slice(0, 8).map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          /* Thoughtful Empty State (StackFood style) */
+          <div className="mb-16 rounded-3xl border-2 border-dashed border-neutral-200 bg-[#FBF9F4] p-10 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-[#0F4327] mb-3">
+              <ShoppingBag className="h-7 w-7" />
             </div>
-          ))}
-        </div>
+            <h3 className="text-lg font-bold text-[#1A231E]">
+              Fresh harvest listings updating shortly
+            </h3>
+            <p className="mt-1.5 text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
+              Local farmers upload new produce harvests daily. Explore our categories below or register as a grower to list your farm crops today.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center rounded-xl bg-[#0F4327] px-4 py-2 text-xs font-bold text-white hover:bg-[#165a36] transition"
+              >
+                Browse All Marketplace &rarr;
+              </Link>
+              <Link
+                href="/farmer/listings/new"
+                className="inline-flex items-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition"
+              >
+                + List Produce as a Farmer
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* How It Works for Buyers: 4 Clear Steps */}
         <div className="rounded-3xl border border-[#E5E0D5] bg-[#FBF9F4] p-8 md:p-12">
@@ -209,26 +131,34 @@ export function MarketplaceShowcase() {
             </div>
           </div>
 
-          {/* Seller Callout Banner */}
+          {/* Secondary Seller & Service Provider Callout Banner */}
           <div className="mt-10 rounded-2xl bg-[#0F4327] p-6 sm:p-8 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 shadow-md">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                Are You a Producer or Supplier?
+                Are You a Producer or Machinery Owner?
               </span>
               <h4 className="text-xl sm:text-2xl font-black tracking-tight mt-1">
-                Sell your harvest directly to commercial off-takers
+                Sell harvest directly or rent equipment
               </h4>
               <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-xl">
-                Join verified Nigerian farmers receiving guaranteed payments, escrow security, and nationwide market access.
+                Join verified Nigerian farmers receiving guaranteed payments, escrow security, and nationwide commercial off-take contracts.
               </p>
             </div>
 
-            <Link
-              href="/farmer/listings/new"
-              className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-xs sm:text-sm font-bold text-[#0F4327] shadow-sm hover:bg-neutral-100 transition shrink-0"
-            >
-              Start Selling Produce &rarr;
-            </Link>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Link
+                href="/auth/register?role=FARMER"
+                className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-xs sm:text-sm font-bold text-[#0F4327] shadow-sm hover:bg-neutral-100 transition"
+              >
+                Join as Farmer &rarr;
+              </Link>
+              <Link
+                href="/auth/register?role=SERVICE_PROVIDER"
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-400 bg-emerald-800/80 px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-emerald-800 transition"
+              >
+                Join as Provider
+              </Link>
+            </div>
           </div>
         </div>
       </div>

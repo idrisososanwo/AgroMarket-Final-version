@@ -3,19 +3,37 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signInAction } from "@/features/auth/actions";
-import { Lock, Mail, AlertCircle } from "lucide-react";
+import { Lock, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface LoginFormProps {
   urlError?: string;
+  registered?: boolean;
+  verify?: boolean;
+  initialEmail?: string;
 }
 
-export function LoginForm({ urlError }: LoginFormProps) {
+export function LoginForm({ urlError, registered, verify, initialEmail }: LoginFormProps) {
   const [state, formAction, isPending] = useActionState(signInAction, null);
 
   const displayedError = (!state?.success && state?.message) || urlError;
 
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm sm:p-8">
+      {/* Registration Success Banner */}
+      {registered && !displayedError && (
+        <div className="mb-5 flex items-start space-x-2.5 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold">Registration Successful!</p>
+            <p className="leading-relaxed">
+              {verify
+                ? "Please check your inbox to confirm your email before signing in."
+                : "Your AgroMarket account has been created. Sign in below to enter your workspace."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {displayedError && (
         <div className="mb-4 flex items-center space-x-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -41,6 +59,7 @@ export function LoginForm({ urlError }: LoginFormProps) {
               type="email"
               autoComplete="email"
               required
+              defaultValue={initialEmail || ""}
               placeholder="farmer@example.com"
               className="block w-full rounded-md border bg-background py-2 pl-10 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600 sm:text-sm"
             />

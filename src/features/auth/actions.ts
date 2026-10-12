@@ -23,9 +23,19 @@ import {
 
 const signUpSchema = z
   .object({
+    roleType: z.enum(["BUYER", "FARMER", "SERVICE_PROVIDER", "EQUIPMENT_OWNER", "BUSINESS"]).default("BUYER"),
+    providerSubtype: z.enum(["EQUIPMENT_OWNER", "SERVICE_PROVIDER", "BUSINESS"]).optional(),
+    fullName: z.string().min(2, "Full name must be at least 2 characters").max(150).optional(),
+    phone: z.string().optional(),
     email: z.string().email("Please enter a valid email address"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
+    state: z.string().optional(),
+    lga: z.string().optional(),
+    farmName: z.string().max(150).optional(),
+    produceTypes: z.string().max(255).optional(),
+    businessName: z.string().max(150).optional(),
+    servicesOffered: z.string().max(255).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -77,9 +87,19 @@ export async function signUpAction(
   formData: FormData
 ): Promise<ActionResponse> {
   const rawData = {
+    roleType: formData.get("roleType") || formData.get("intendedRole") || "BUYER",
+    providerSubtype: formData.get("providerSubtype") || undefined,
+    fullName: formData.get("fullName") || undefined,
+    phone: formData.get("phone") || undefined,
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
+    state: formData.get("state") || undefined,
+    lga: formData.get("lga") || undefined,
+    farmName: formData.get("farmName") || undefined,
+    produceTypes: formData.get("produceTypes") || undefined,
+    businessName: formData.get("businessName") || undefined,
+    servicesOffered: formData.get("servicesOffered") || undefined,
   };
 
   const parsed = signUpSchema.safeParse(rawData);
@@ -91,17 +111,67 @@ export async function signUpAction(
     };
   }
 
-  const intendedRole = (formData.get("intendedRole") as string) || "BUYER";
+  const {
+    roleType,
+    providerSubtype,
+    fullName,
+    phone,
+    email,
+    password,
+    state,
+    lga,
+    farmName,
+    produceTypes,
+    businessName,
+    servicesOffered,
+  } = parsed.data;
+
+  // Determine effective primary and assigned roles
+  let primaryRole: SelfAssignableRole = "BUYER";
+  const assignedRoles: SelfAssignableRole[] = ["BUYER"];
+
+  if (roleType === "FARMER") {
+    primaryRole = "FARMER";
+    assignedRoles.push("FARMER");
+  } else if (roleType === "EQUIPMENT_OWNER") {
+    primaryRole = "EQUIPMENT_OWNER";
+    assignedRoles.push("EQUIPMENT_OWNER");
+  } else if (roleType === "BUSINESS") {
+    primaryRole = "BUSINESS";
+    assignedRoles.push("BUSINESS");
+  } else if (roleType === "SERVICE_PROVIDER") {
+    if (providerSubtype === "EQUIPMENT_OWNER") {
+      primaryRole = "EQUIPMENT_OWNER";
+      assignedRoles.push("EQUIPMENT_OWNER");
+    } else if (providerSubtype === "BUSINESS") {
+      primaryRole = "BUSINESS";
+      assignedRoles.push("BUSINESS");
+    } else {
+      primaryRole = "SERVICE_PROVIDER";
+      assignedRoles.push("SERVICE_PROVIDER");
+    }
+  }
+
+  const effectiveFullName = fullName || email.split("@")[0] || "AgroMarket User";
+  const effectivePhone = phone ? normalizeNigerianPhone(phone) : "08000000000";
+  const effectiveState = state || "Lagos";
+  const effectiveLga = lga || "Ikeja";
 
   const baseUrl = getAppBaseUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
+    email,
+    password,
     options: {
-      emailRedirectTo: `${baseUrl}/auth/callback?next=/auth/verify`,
+      emailRedirectTo: `${baseUrl}/auth/callback?next=/auth/login?registered=true`,
       data: {
-        intended_role: intendedRole,
+        full_name: effectiveFullName,
+        phone: effectivePhone,
+        state: effectiveState,
+        lga: effectiveLga,
+        intended_role: primaryRole,
+        farm_name: farmName || null,
+        business_name: businessName || null,
       },
     },
   });
@@ -113,7 +183,7 @@ export async function signUpAction(
     };
   }
 
-  // If email confirmation is required by Supabase
+  // Check if duplicate user
   if (data.user && data.user.identities && data.user.identities.length === 0) {
     return {
       success: false,
@@ -121,10 +191,77 @@ export async function signUpAction(
     };
   }
 
-  return {
-    success: true,
-    message: "Registration successful! Please check your email to verify your account.",
-  };
+  // Safely persist profile & trusted roles in database
+  if (data.user) {
+    const userId = data.user.id;
+    try {
+      const adminClient = createAdminClient();
+
+      let bioContent: string | null = null;
+      if (primaryRole === "FARMER" && farmName) {
+        bioContent = `Farm: ${farmName}${produceTypes ? ` | Produce: ${produceTypes}` : ""}`;
+      } else if ((primaryRole === "SERVICE_PROVIDER" || primaryRole === "EQUIPMENT_OWNER") && businessName) {
+        bioContent = `Business: ${businessName}${servicesOffered ? ` | Services: ${servicesOffered}` : ""}`;
+      }
+
+      // Upsert profile
+      await adminClient.from("profiles").upsert({
+        id: userId,
+        full_name: effectiveFullName,
+        phone: effectivePhone,
+        email,
+        state: effectiveState,
+        lga: effectiveLga,
+        bio: bioContent,
+        is_verified: false,
+        updated_at: new Date().toISOString(),
+      });
+
+      // Upsert user_roles
+      const roleInserts = assignedRoles.map((roleCode) => ({
+        user_id: userId,
+        role_code: roleCode,
+        assigned_by: userId,
+      }));
+
+      await adminClient
+        .from("user_roles")
+        .upsert(roleInserts, { onConflict: "user_id,role_code" });
+
+      // If business profile data exists, persist to business_profiles
+      if (businessName) {
+        await adminClient.from("business_profiles").upsert(
+          {
+            user_id: userId,
+            company_name: businessName,
+            business_type: primaryRole === "EQUIPMENT_OWNER" ? "EQUIPMENT_LEASING" : "SOLE_PROPRIETORSHIP",
+            state: effectiveState,
+            lga: effectiveLga,
+            office_address: `${effectiveLga}, ${effectiveState}`,
+            is_verified: false,
+          },
+          { onConflict: "user_id" }
+        );
+      }
+    } catch (dbErr) {
+      console.warn("Could not upsert profile/roles during signup (will sync on login/verify):", dbErr);
+    }
+  }
+
+  const isEmailConfirmationPending = !data.session;
+  if (data.session) {
+    // If auto-logged in, sign out so they go through standard login flow as required
+    await supabase.auth.signOut();
+  }
+
+  revalidatePath("/", "layout");
+
+  // Redirect user to login page with clear feedback
+  redirect(
+    `/auth/login?registered=true&email=${encodeURIComponent(email)}${
+      isEmailConfirmationPending ? "&verify=true" : ""
+    }`
+  );
 }
 
 export async function signInAction(
@@ -162,7 +299,7 @@ export async function signInAction(
   }
 
   // Determine landing destination based on trusted database roles or safe return URL
-  let targetDestination = "/account";
+  let targetDestination = "/";
   const requestedNext = formData.get("next") as string | null;
   if (
     requestedNext &&
@@ -185,18 +322,24 @@ export async function signInAction(
       const roles = (rolesData?.map((r) => r.role_code) || []) as string[];
 
       // Explicit role-based landing precedence:
-      // 1. FARMER -> /farmer (producer workspace)
-      // 2. EQUIPMENT_OWNER -> /equipment/owner
-      // 3. BUSINESS -> /business
-      // 4. BUYER / others -> /account?role=BUYER (customer shopping hub)
-      if (roles.includes("FARMER")) {
+      // 1. ADMIN -> /admin
+      // 2. FARMER -> /farmer (producer workspace)
+      // 3. EQUIPMENT_OWNER -> /equipment/owner
+      // 4. SERVICE_PROVIDER / EXPERT -> /services/provider
+      // 5. BUSINESS -> /business
+      // 6. BUYER / default -> / (Customer shopping marketplace homepage!)
+      if (roles.includes("ADMIN")) {
+        targetDestination = "/admin";
+      } else if (roles.includes("FARMER")) {
         targetDestination = "/farmer";
       } else if (roles.includes("EQUIPMENT_OWNER")) {
         targetDestination = "/equipment/owner";
+      } else if (roles.includes("SERVICE_PROVIDER") || roles.includes("EXPERT")) {
+        targetDestination = "/services/provider";
       } else if (roles.includes("BUSINESS")) {
         targetDestination = "/business";
       } else {
-        targetDestination = "/account?role=BUYER";
+        targetDestination = "/"; // Customer/Buyer lands directly on the customer marketplace!
       }
     }
   }

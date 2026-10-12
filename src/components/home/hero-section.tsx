@@ -3,10 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ChevronRight, Layers, Search, Sparkles } from "lucide-react";
+import { ArrowRight, Search, ShieldCheck, Tractor, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AgroMarketSymbol } from "@/components/brand";
-import { NetworkHeroVisual } from "./network-hero-visual";
 
 export function HeroSection() {
   const router = useRouter();
@@ -21,8 +20,12 @@ export function HeroSection() {
     }
   };
 
+  const handleQuickChip = (term: string) => {
+    router.push(`/marketplace?search=${encodeURIComponent(term)}`);
+  };
+
   return (
-    <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-20 border-b border-[#E5E0D5]/70 bg-gradient-to-b from-white via-[#FBF9F4] to-[#FBF9F4]">
+    <section className="relative overflow-hidden pt-8 pb-14 md:pt-14 md:pb-20 border-b border-[#E5E0D5]/70 bg-gradient-to-b from-white via-[#FBF9F4] to-[#FBF9F4]">
       {/* Decorative Subtle Background Grids */}
       <div
         className="absolute inset-0 bg-[radial-gradient(#E5E0D5_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none"
@@ -30,31 +33,29 @@ export function HeroSection() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          {/* Left Column: Narrative, Search & Primary CTAs */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+          {/* Left Column: Consumer Narrative, Search & Shopping Actions */}
           <div className="lg:col-span-7 space-y-6 text-left">
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] px-3.5 py-1 shadow-xs">
               <AgroMarketSymbol size={16} />
               <span className="text-xs font-bold uppercase tracking-wider text-[#0F4327]">
-                Agricultural Infrastructure for Nigeria
+                Nigeria&apos;s Verified Agricultural Marketplace
               </span>
             </div>
 
-            {/* Primary Headline */}
+            {/* Consumer Shopping Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#1A231E] leading-[1.08]">
-              Connecting the systems that move{" "}
+              Fresh Farm Produce,{" "}
               <span className="text-[#0F4327] underline decoration-[#16A34A]/40 underline-offset-8">
-                agriculture forward
+                Straight from the Soil
               </span>
               .
             </h1>
 
             {/* Supporting Copy */}
             <p className="text-base sm:text-lg text-neutral-600 max-w-2xl leading-relaxed">
-              AgroMarket connects farmers, commercial buyers, processing facilities, logistics
-              corridors, and multi-agent intelligence into one coordinated digital ecosystem.
-              Source farm-fresh harvest directly from verified Nigerian producers.
+              Discover grains, roots, vegetables, livestock, and fresh harvest directly from verified Nigerian farmers. Enjoy transparent farm-gate pricing, escrow protection, and tracked corridor delivery.
             </p>
 
             {/* Consumer Search Bar (StackFood-inspired Produce Search) */}
@@ -77,72 +78,144 @@ export function HeroSection() {
               </div>
             </form>
 
-            {/* Main Action CTAs */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            {/* Quick Search Tags (StackFood style) */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-500 pt-1">
+              <span className="font-semibold text-neutral-700">Popular:</span>
+              <button
+                type="button"
+                onClick={() => handleQuickChip("White Maize")}
+                className="px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition"
+              >
+                🌾 White Maize
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickChip("Yam")}
+                className="px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition"
+              >
+                🥔 Benue Yam
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickChip("Tomatoes")}
+                className="px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition"
+              >
+                🍅 Round Tomatoes
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickChip("Soybeans")}
+                className="px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition"
+              >
+                🫘 Soybeans
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickChip("Catfish")}
+                className="px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition"
+              >
+                🐟 Farm Catfish
+              </button>
+            </div>
+
+            {/* Shopping Action CTAs */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link href="/marketplace">
                 <Button
                   variant="primary"
                   size="lg"
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
-                  Explore AgroMarket
+                  Shop Fresh Produce
                 </Button>
               </Link>
 
-              <Link href="/ecosystem">
+              <Link href="/auth/register?role=FARMER">
                 <Button
                   variant="outline"
                   size="lg"
-                  rightIcon={<Layers className="h-4 w-4 text-[#0F4327]" />}
+                  leftIcon={<Tractor className="h-4 w-4 text-emerald-700" />}
                 >
-                  Explore Ecosystem
+                  Sell as a Farmer
                 </Button>
-              </Link>
-
-              <Link href="/farmer/listings/new">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  leftIcon={<Sparkles className="h-4 w-4 text-emerald-600" />}
-                >
-                  Sell Produce
-                </Button>
-              </Link>
-            </div>
-
-            {/* Audience-Oriented Quick Paths */}
-            <div className="pt-4 border-t border-[#E5E0D5]/80 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-              <span className="font-semibold text-neutral-700">Explore by role:</span>
-              <Link
-                href="/farmer"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition-colors"
-              >
-                I am a Farmer <ChevronRight className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/marketplace"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition-colors"
-              >
-                I am a Buyer <ChevronRight className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/ecosystem"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#16A34A] hover:text-[#0F4327] transition-colors"
-              >
-                I am a Business <ChevronRight className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/my-intelligence"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[#0F4327] hover:bg-[#DCFCE7] transition-colors font-medium"
-              >
-                Intelligence Hub <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
 
-          {/* Right Column: Hero Visual Graphic */}
+          {/* Right Column: Premium Agricultural Showcase Visual */}
           <div className="lg:col-span-5 flex justify-center">
-            <NetworkHeroVisual />
+            <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E5E0D5] p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-neutral-800">Fresh Harvest Inflow</span>
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                  100% Escrow Protected
+                </span>
+              </div>
+
+              {/* Produce Showcase Snippets */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FBF9F4] border border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl p-2 rounded-xl bg-amber-50">🌾</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-900">Dry White Maize (Grade A)</h4>
+                      <p className="text-[11px] text-neutral-500">Zaria Agricultural Cluster, Kaduna</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-neutral-900 block">₦450/kg</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">Ready to ship</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FBF9F4] border border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl p-2 rounded-xl bg-orange-50">🥔</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-900">Benue Giant Yam Tubers</h4>
+                      <p className="text-[11px] text-neutral-500">Gboko Farm Settlement, Benue</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-neutral-900 block">₦2,500/tuber</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">Farm-gate rate</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FBF9F4] border border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl p-2 rounded-xl bg-emerald-50">🍅</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-900">Plum Round Tomatoes</h4>
+                      <p className="text-[11px] text-neutral-500">Jos South Plateau Irrigation Cluster</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-neutral-900 block">₦850/kg</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">Cold dispatch</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="pt-3 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold text-neutral-600">
+                <div className="flex flex-col items-center">
+                  <ShieldCheck className="h-4 w-4 text-emerald-700 mb-0.5" />
+                  <span>Escrow Safe</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Tractor className="h-4 w-4 text-emerald-700 mb-0.5" />
+                  <span>Direct Farm Gate</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <TrendingUp className="h-4 w-4 text-emerald-700 mb-0.5" />
+                  <span>Live Fair Prices</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

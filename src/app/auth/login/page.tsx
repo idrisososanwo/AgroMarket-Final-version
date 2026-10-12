@@ -11,6 +11,9 @@ export const metadata = {
 interface LoginPageProps {
   searchParams: Promise<{
     error?: string;
+    registered?: string;
+    verify?: string;
+    email?: string;
   }>;
 }
 
@@ -34,7 +37,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <LoginForm urlError={resolvedParams.error} />
+        <LoginForm
+          urlError={resolvedParams.error}
+          registered={resolvedParams.registered === "true"}
+          verify={resolvedParams.verify === "true"}
+          initialEmail={resolvedParams.email}
+        />
       </div>
     </div>
   );
