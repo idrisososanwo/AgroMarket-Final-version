@@ -79,6 +79,8 @@ const ROLE_DISPLAY_NAMES: Record<UserRole, { label: string; icon: string; descri
   },
 };
 
+import { BackButton } from "@/components/ui/back-button";
+
 interface AccountPageProps {
   searchParams?: Promise<{
     role?: string;
@@ -151,7 +153,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Navigation Bar: Context-aware Back Button */}
+        <div>
+          <BackButton
+            fallbackHref="/"
+            label="Back to Marketplace"
+          />
+        </div>
+
         {/* Top Header Card */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs gap-4">
           <div className="flex items-center space-x-4">

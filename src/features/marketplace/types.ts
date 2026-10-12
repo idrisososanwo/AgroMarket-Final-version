@@ -66,6 +66,8 @@ export interface MarketplaceListing {
   sellerPhone?: string | null;
   sellerVerified: boolean;
   farmName?: string | null;
+  imageUrl?: string | null;
+  images?: string[];
 }
 
 export interface CanonicalProductOption {

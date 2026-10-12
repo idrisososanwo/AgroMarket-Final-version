@@ -5,6 +5,7 @@ import {
   EQUIPMENT_CONDITION_LABELS,
 } from "../types";
 import { formatNGN } from "@/features/marketplace/constants";
+import { ProductImage } from "@/components/ui/product-image";
 import {
   MapPin,
   ShieldCheck,
@@ -31,35 +32,47 @@ export function EquipmentCard({
     EQUIPMENT_CONDITION_LABELS[equipment.condition] || equipment.condition;
 
   return (
-    <div className="group flex flex-col rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      {/* Card Header: Category & Availability */}
-      <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 bg-neutral-50/60 rounded-t-xl">
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-600/20">
-          <Tractor className="h-3.5 w-3.5 text-emerald-700" />
-          {categoryLabel}
-        </span>
-        {showAvailabilityBadge && (
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border ${
-              equipment.isAvailable && equipment.status === "ACTIVE"
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-neutral-100 text-neutral-600 border-neutral-200"
-            }`}
-          >
-            {equipment.isAvailable && equipment.status === "ACTIVE" ? (
-              <>
-                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                Available Now
-              </>
-            ) : (
-              <>
-                <XCircle className="h-3 w-3 text-neutral-500" />
-                Unavailable
-              </>
-            )}
+    <div className="group flex flex-col rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden">
+      {/* Equipment Photograph Area */}
+      <Link
+        href={`/equipment/${equipment.id}`}
+        className="block relative overflow-hidden bg-neutral-100"
+      >
+        <ProductImage
+          type="equipment"
+          equipmentCategory={equipment.category}
+          title={equipment.name}
+          aspectRatio="4/3"
+        />
+        {/* Category & Availability Badges Overlay */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-white/95 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-emerald-800 shadow-xs ring-1 ring-emerald-600/20">
+            <Tractor className="h-3 w-3 text-emerald-700" />
+            {categoryLabel}
           </span>
-        )}
-      </div>
+          {showAvailabilityBadge && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium shadow-xs ${
+                equipment.isAvailable && equipment.status === "ACTIVE"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-black/60 backdrop-blur-xs text-white"
+              }`}
+            >
+              {equipment.isAvailable && equipment.status === "ACTIVE" ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3 text-white" />
+                  Available Now
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-3 w-3 text-neutral-300" />
+                  Unavailable
+                </>
+              )}
+            </span>
+          )}
+        </div>
+      </Link>
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col p-4">

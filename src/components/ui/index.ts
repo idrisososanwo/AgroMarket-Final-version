@@ -21,3 +21,4 @@ export * from "./breadcrumbs";
 export * from "./tabs";
 export * from "./back-button";
 export * from "./page-header";
+export * from "./product-image";

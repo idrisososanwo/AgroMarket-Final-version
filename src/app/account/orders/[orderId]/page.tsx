@@ -5,7 +5,7 @@ import { getOrderDetailsResult } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 import { OrderCancelButton } from "@/features/orders/components/order-cancel-button";
-import { BackButton, Breadcrumbs } from "@/components/ui";
+import { BackButton, Breadcrumbs, ProductImage } from "@/components/ui";
 
 interface OrderDetailPageProps {
   params: Promise<{
@@ -265,17 +265,27 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
               {order.items.map((item) => (
                 <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-                  <div>
-                    <div className="font-bold text-neutral-900 text-sm">
-                      {item.productName}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-14 h-14 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+                      <ProductImage
+                        productName={item.productName}
+                        title={item.productName}
+                        aspectRatio="square"
+                        containerClassName="w-full h-full"
+                      />
                     </div>
-                    <div className="text-xs text-neutral-500 mt-0.5">
-                      Seller: <strong>{item.sellerName}</strong> {item.sellerState ? `(${item.sellerState})` : ""}
-                    </div>
+                    <div>
+                      <div className="font-bold text-neutral-900 text-sm">
+                        {item.productName}
+                      </div>
+                      <div className="text-xs text-neutral-500 mt-0.5">
+                        Seller: <strong>{item.sellerName}</strong> {item.sellerState ? `(${item.sellerState})` : ""}
+                      </div>
                     <div className="text-xs text-neutral-600 mt-1">
                       {item.quantity} {item.unit} &times; {formatNGN(item.unitPrice)}
                     </div>
                   </div>
+                </div>
 
                   <div className="text-right flex flex-col items-end gap-1">
                     <div className="text-sm font-black text-neutral-900">

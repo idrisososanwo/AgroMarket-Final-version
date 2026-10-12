@@ -20,7 +20,7 @@ import {
   XCircle,
   Lock,
 } from "lucide-react";
-import { BackButton, Breadcrumbs } from "@/components/ui";
+import { BackButton, Breadcrumbs, ProductImage } from "@/components/ui";
 
 interface ServiceDetailPageProps {
   params: Promise<{
@@ -83,7 +83,19 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
         </div>
 
         {/* Main Service Card */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+          {/* Service Photo Showcase */}
+          <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-xs">
+            <ProductImage
+              type="service"
+              serviceCategory={service.serviceCategory}
+              title={service.title}
+              aspectRatio="16/9"
+              priority={true}
+              containerClassName="w-full h-64 sm:h-80 md:h-96"
+            />
+          </div>
+
           {/* Header Row */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-5">
             <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-600/20">

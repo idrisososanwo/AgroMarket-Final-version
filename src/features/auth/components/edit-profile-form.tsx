@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { updateProfileAction } from "@/features/auth/actions";
-import { AlertCircle, CheckCircle2, Save } from "lucide-react";
+import { AlertCircle, CheckCircle2, Save, Loader2 } from "lucide-react";
 
 interface EditProfileFormProps {
   initialFullName: string;
@@ -29,24 +30,38 @@ export function EditProfileForm({
   initialLocationAddress,
   initialBio,
 }: EditProfileFormProps) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState(updateProfileAction, null);
+
+  useEffect(() => {
+    if (state?.success) {
+      // Clear visual feedback then navigate to homepage
+      const timer = setTimeout(() => {
+        router.push("/");
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state?.success, router]);
 
   return (
     <form action={formAction} className="space-y-4">
       {state?.message && (
         <div
+          role="alert"
           className={`flex items-center space-x-2 rounded-lg border p-3 text-xs ${
             state.success
-              ? "border-primary-200 bg-primary-50 text-primary-800"
-              : "border-destructive/20 bg-destructive/5 text-destructive"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-800"
           }`}
         >
           {state.success ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
           )}
-          <span>{state.message}</span>
+          <span className="font-medium">
+            {state.message} {state.success && "Returning to marketplace homepage..."}
+          </span>
         </div>
       )}
 
@@ -152,11 +167,25 @@ export function EditProfileForm({
       <div className="flex justify-end pt-2">
         <button
           type="submit"
-          disabled={isPending}
-          className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 sm:text-sm"
+          disabled={isPending || state?.success}
+          className="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-800 disabled:opacity-50 transition sm:text-sm"
         >
-          <Save className="mr-1.5 h-3.5 w-3.5" />
-          {isPending ? "Saving changes..." : "Save Changes"}
+          {isPending ? (
+            <>
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              Saving changes...
+            </>
+          ) : state?.success ? (
+            <>
+              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+              Saved! Redirecting...
+            </>
+          ) : (
+            <>
+              <Save className="mr-1.5 h-3.5 w-3.5" />
+              Save Changes
+            </>
+          )}
         </button>
       </div>
     </form>

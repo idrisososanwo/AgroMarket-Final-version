@@ -11,6 +11,7 @@ import {
   updateCartItemAction,
 } from "../actions";
 import { createOrderFromCartAction } from "@/features/orders/actions";
+import { ProductImage } from "@/components/ui/product-image";
 
 interface CartViewProps {
   cart: BuyerCart;
@@ -200,8 +201,21 @@ export function CartView({ cart, userProfile }: CartViewProps) {
             <div className="divide-y divide-neutral-100">
               {group.items.map((item) => (
                 <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <Link
+                      href={`/marketplace/${item.listingId}`}
+                      className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 relative group"
+                    >
+                      <ProductImage
+                        productName={item.productName}
+                        categoryName={item.categoryName}
+                        title={item.title}
+                        aspectRatio="square"
+                        containerClassName="w-full h-full"
+                      />
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
                       {item.productName} • {item.categoryName}
                     </span>
                     <Link
@@ -224,6 +238,7 @@ export function CartView({ cart, userProfile }: CartViewProps) {
                       </div>
                     )}
                   </div>
+                </div>
 
                   {/* Quantity and Actions */}
                   <div className="flex items-center justify-between sm:justify-end gap-5">

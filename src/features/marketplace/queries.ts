@@ -36,10 +36,12 @@ interface RawListingRow {
     id?: string;
     name?: string;
     slug?: string;
+    image_url?: string | null;
     categories?: {
       id?: string;
       name?: string;
       slug?: string;
+      image_url?: string | null;
     } | null;
   } | null;
   inventory?:
@@ -116,6 +118,11 @@ function mapListingRow(
     sellerPhone: null,
     sellerVerified: Boolean(seller?.is_verified),
     farmName: farm?.name,
+    imageUrl:
+      prod?.image_url ||
+      cat?.image_url ||
+      ((row as unknown as Record<string, unknown>).image_url as string | null) ||
+      null,
   };
 }
 
@@ -158,10 +165,12 @@ export async function getMarketplaceListings(
           id,
           name,
           slug,
+          image_url,
           categories!inner (
             id,
             name,
-            slug
+            slug,
+            image_url
           )
         ),
         inventory (
@@ -305,10 +314,12 @@ export async function getMarketplaceListingById(
           id,
           name,
           slug,
+          image_url,
           categories (
             id,
             name,
-            slug
+            slug,
+            image_url
           )
         ),
         inventory (
@@ -390,10 +401,12 @@ export async function getSellerListings(
           id,
           name,
           slug,
+          image_url,
           categories (
             id,
             name,
-            slug
+            slug,
+            image_url
           )
         ),
         inventory (

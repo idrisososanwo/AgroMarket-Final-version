@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getMarketplaceListingById } from "@/features/marketplace/queries";
+import {
+  getMarketplaceListingById,
+  getMarketplaceListings,
+} from "@/features/marketplace/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { AddToCartForm } from "@/features/marketplace/components/add-to-cart-form";
-
-import { BackButton, Breadcrumbs } from "@/components/ui";
+import { ListingCard } from "@/features/marketplace/components/listing-card";
+import { BackButton, Breadcrumbs, ProductImage } from "@/components/ui";
 
 interface ListingDetailPageProps {
   params: Promise<{
@@ -21,6 +24,15 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   if (!listing || listing.status !== "ACTIVE") {
     notFound();
   }
+
+  // Fetch related listings in the same category
+  const relatedListingsRes = await getMarketplaceListings({
+    category: listing.categoryName,
+    limit: 4,
+  });
+  const relatedListings = (relatedListingsRes.listings || [])
+    .filter((l) => l.id !== listing.id)
+    .slice(0, 3);
 
   const inStock = listing.quantityAvailable > 0;
 
@@ -51,6 +63,22 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
           {/* Main Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">
+              {/* Product Photograph Showcase */}
+              <div className="mb-6 overflow-hidden rounded-2xl border border-neutral-200 shadow-xs">
+                <ProductImage
+                  src={listing.imageUrl}
+                  productSlug={listing.productSlug}
+                  productName={listing.productName}
+                  categorySlug={listing.categoryId}
+                  categoryName={listing.categoryName}
+                  title={listing.title}
+                  aspectRatio="16/9"
+                  priority={true}
+                  showFallbackBadge={true}
+                  containerClassName="w-full h-64 sm:h-80 md:h-96"
+                />
+              </div>
+
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
@@ -247,6 +275,33 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
             </div>
           </div>
         </div>
+
+        {/* Related Product Recommendations */}
+        {relatedListings.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-neutral-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                  Related Produce
+                </span>
+                <h2 className="text-xl font-bold text-neutral-900 mt-1">
+                  More {listing.categoryName} from Nigerian Farms
+                </h2>
+              </div>
+              <Link
+                href={`/marketplace?category=${encodeURIComponent(listing.categoryName)}`}
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                View all &rarr;
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedListings.map((rel) => (
+                <ListingCard key={rel.id} listing={rel} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

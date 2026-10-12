@@ -48,7 +48,7 @@ function getStatusBadge(status: ListingStatus) {
   }
 }
 
-import { BackButton, Breadcrumbs } from "@/components/ui";
+import { BackButton, Breadcrumbs, ProductImage } from "@/components/ui";
 
 interface FarmerListingsPageProps {
   searchParams?: Promise<{
@@ -246,14 +246,30 @@ export default async function FarmerListingsPage({ searchParams }: FarmerListing
                       <tr key={item.id} className="hover:bg-neutral-50/50 transition">
                         {/* Produce & Title */}
                         <td className="py-4 pl-6 pr-3">
-                          <div className="font-bold text-neutral-900 leading-snug">
-                            {item.title}
-                          </div>
-                          <div className="text-xs text-emerald-700 font-medium mt-0.5">
-                            {item.productName} • {item.categoryName}
-                          </div>
-                          <div className="text-[11px] text-neutral-400 mt-1">
-                            Listed {new Date(item.createdAt).toLocaleDateString("en-NG", { dateStyle: "medium" })}
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+                              <ProductImage
+                                src={item.imageUrl}
+                                productSlug={item.productSlug}
+                                productName={item.productName}
+                                categorySlug={item.categoryId}
+                                categoryName={item.categoryName}
+                                title={item.title}
+                                aspectRatio="square"
+                                containerClassName="w-full h-full"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-bold text-neutral-900 leading-snug">
+                                {item.title}
+                              </div>
+                              <div className="text-xs text-emerald-700 font-medium mt-0.5">
+                                {item.productName} • {item.categoryName}
+                              </div>
+                              <div className="text-[11px] text-neutral-400 mt-1">
+                                Listed {new Date(item.createdAt).toLocaleDateString("en-NG", { dateStyle: "medium" })}
+                              </div>
+                            </div>
                           </div>
                         </td>
 
@@ -335,11 +351,25 @@ export default async function FarmerListingsPage({ searchParams }: FarmerListing
                   key={item.id}
                   className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs space-y-3"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-neutral-900 text-sm">{item.title}</h3>
-                      <div className="text-xs text-emerald-700 font-medium mt-0.5">
-                        {item.productName} • {item.categoryName}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
+                        <ProductImage
+                          src={item.imageUrl}
+                          productSlug={item.productSlug}
+                          productName={item.productName}
+                          categorySlug={item.categoryId}
+                          categoryName={item.categoryName}
+                          title={item.title}
+                          aspectRatio="square"
+                          containerClassName="w-full h-full"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-neutral-900 text-sm truncate">{item.title}</h3>
+                        <div className="text-xs text-emerald-700 font-medium mt-0.5 truncate">
+                          {item.productName} • {item.categoryName}
+                        </div>
                       </div>
                     </div>
                     {getStatusBadge(item.status)}

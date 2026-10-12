@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MarketplaceListing } from "../types";
 import { formatNGN } from "../constants";
+import { ProductImage } from "@/components/ui/product-image";
 
 interface ListingCardProps {
   listing: MarketplaceListing;
@@ -10,16 +11,32 @@ export function ListingCard({ listing }: ListingCardProps) {
   const isAvailable = listing.quantityAvailable > 0;
 
   return (
-    <div className="group flex flex-col rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      {/* Header Badges */}
-      <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 bg-neutral-50/60 rounded-t-xl">
-        <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-          {listing.categoryName}
-        </span>
-        <span className="text-xs text-neutral-500 font-medium">
-          {listing.state}
-        </span>
-      </div>
+    <div className="group flex flex-col rounded-xl border border-neutral-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden">
+      {/* Product Photograph Area */}
+      <Link
+        href={`/marketplace/${listing.id}`}
+        className="block relative overflow-hidden bg-neutral-100"
+      >
+        <ProductImage
+          src={listing.imageUrl}
+          productSlug={listing.productSlug}
+          productName={listing.productName}
+          categorySlug={listing.categoryId}
+          categoryName={listing.categoryName}
+          title={listing.title}
+          aspectRatio="4/3"
+          showFallbackBadge={true}
+        />
+        {/* Category & Location Badges Overlay */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+          <span className="inline-flex items-center rounded-md bg-white/95 backdrop-blur-xs px-2 py-0.5 text-xs font-semibold text-emerald-800 shadow-xs ring-1 ring-emerald-600/20">
+            {listing.categoryName}
+          </span>
+          <span className="inline-flex items-center rounded-md bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[11px] font-medium text-white shadow-xs">
+            {listing.state}
+          </span>
+        </div>
+      </Link>
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col p-4">

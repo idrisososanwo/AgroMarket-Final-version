@@ -22,7 +22,7 @@ import {
   Shield,
 } from "lucide-react";
 
-import { BackButton, Breadcrumbs } from "@/components/ui";
+import { BackButton, Breadcrumbs, ProductImage } from "@/components/ui";
 
 interface EquipmentDetailPageProps {
   params: Promise<{
@@ -92,7 +92,19 @@ export default async function EquipmentDetailPage({ params }: EquipmentDetailPag
           {/* Main Info Column (2 cols) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Title & Status Card */}
-            <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm space-y-6">
+              {/* Equipment Photo Showcase */}
+              <div className="overflow-hidden rounded-xl border border-neutral-200 shadow-xs">
+                <ProductImage
+                  type="equipment"
+                  equipmentCategory={equipment.category}
+                  title={equipment.name}
+                  aspectRatio="16/9"
+                  priority={true}
+                  containerClassName="w-full h-64 sm:h-80 md:h-96"
+                />
+              </div>
+
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-600/20">
                   <Tractor className="h-3.5 w-3.5 text-emerald-700" />
