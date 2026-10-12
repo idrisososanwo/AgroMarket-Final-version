@@ -10,6 +10,13 @@ export const basketPurposeEnum = z.enum([
   "INDIVIDUAL",
 ]);
 
+export const priorityGoalEnum = z.enum([
+  "AFFORDABILITY",
+  "VARIETY",
+  "FREQUENT_STAPLES",
+  "HEALTH_CONSCIOUS",
+]);
+
 export const updateUserPreferencesSchema = z.object({
   budgetTargetBasket: z.number().positive("Basket budget must be greater than zero").optional().nullable(),
   budgetTargetMonthly: z.number().positive("Monthly budget must be greater than zero").optional().nullable(),
@@ -17,6 +24,11 @@ export const updateUserPreferencesSchema = z.object({
   lga: z.string().max(100).optional().nullable(),
   familySize: z.number().int().min(1, "Household size must be at least 1").max(50).default(4),
   dietaryPreferences: z.array(z.string().max(50)).default([]),
+  allergies: z.array(z.string().max(100)).optional(),
+  healthConsiderations: z.array(z.string().max(100)).optional(),
+  dislikedItems: z.array(z.string().max(100)).optional(),
+  durationDays: z.number().int().min(1).max(90).optional(),
+  priorityGoal: priorityGoalEnum.optional(),
   preferredStaples: z.array(z.string().max(100)).default([]),
   preferredCategories: z.array(z.string().uuid()).default([]),
   excludedProducts: z.array(z.string().uuid()).default([]),
@@ -32,6 +44,11 @@ export const generateBasketSchema = z.object({
   lga: z.string().max(100).optional().nullable(),
   familySize: z.number().int().min(1).max(50).default(4),
   basketPurpose: basketPurposeEnum.default("HOUSEHOLD"),
+  durationDays: z.number().int().min(1).max(90).optional(),
+  priorityGoal: priorityGoalEnum.optional(),
+  allergies: z.array(z.string().max(100)).optional(),
+  healthConsiderations: z.array(z.string().max(100)).optional(),
+  dislikedItems: z.array(z.string().max(100)).optional(),
   preferredStaples: z.array(z.string().max(100)).optional(),
   preferredCategories: z.array(z.string().uuid()).optional(),
   excludedProducts: z.array(z.string().uuid()).optional(),

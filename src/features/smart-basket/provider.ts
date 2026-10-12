@@ -27,26 +27,32 @@ interface ScoredCandidate {
   subtotal: number;
   benchmark?: PriceBenchmark;
   estimatedSavings: number;
+  allergenWarning: string | null;
+  isFrequentPurchase: boolean;
 }
 
 /**
- * Deterministic Baseline Recommendation Provider for Phase 1.0.
+ * Deterministic Baseline Recommendation Provider.
  *
- * Implements a transparent, mathematical scoring and greedy knapsack allocation algorithm.
- * Strictly avoids pseudo-scientific AI claims, hallucinated data, or fake machine-learning.
- * Provides verifiable explanations grounded directly in user preferences, location,
- * available inventory, and authoritative market price benchmarks.
+ * Implements transparent, mathematical scoring and greedy knapsack allocation.
+ * Integrates:
+ * 1. Customer budget as a strict hard spending limit.
+ * 2. Real marketplace inventory and valid prices.
+ * 3. Voluntary dietary preferences, allergy avoidance, and health considerations.
+ * 4. Authenticated buyer order history for personalization.
+ * 5. Transparent explanations and clear disclaimers without hallucinated data.
  */
 export class DeterministicRecommendationProvider implements RecommendationProvider {
   readonly name = "DETERMINISTIC_BASELINE";
-  readonly version = "1.0.0";
+  readonly version = "1.1.0";
 
   async generateRecommendations(context: RecommendationContext): Promise<SmartBasketResult> {
-    const { userId, input, preferences, candidates, benchmarks } = context;
+    const { userId, input, preferences, candidates, benchmarks, orderHistory } = context;
     const targetBudget = Number(input.budget);
     const targetState = input.state;
     const targetLga = input.lga || preferences?.lga || null;
     const householdSize = input.familySize || preferences?.familySize || 4;
+    const priorityGoal = input.priorityGoal || preferences?.priorityGoal || "AFFORDABILITY";
 
     const preferredStaples = new Set(
       (input.preferredStaples || preferences?.preferredStaples || []).map((s) =>
@@ -66,6 +72,24 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
       input.excludedCategories || preferences?.excludedCategories || []
     );
 
+    // Collect allergies and avoided ingredients
+    const allergiesList = [
+      ...(input.allergies || []),
+      ...(preferences?.allergies || []),
+      ...(input.dislikedItems || []),
+      ...(preferences?.dislikedItems || []),
+    ]
+      .map((a) => a.trim().toLowerCase())
+      .filter(Boolean);
+
+    // Collect health considerations
+    const healthConsiderations = new Set(
+      [
+        ...(input.healthConsiderations || []),
+        ...(preferences?.healthConsiderations || []),
+      ].map((h) => h.toUpperCase())
+    );
+
     // 1. Hard Filter Candidates
     const eligibleCandidates: CandidateListing[] = [];
 
@@ -80,7 +104,7 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
         continue;
       }
 
-      // User Exclusions
+      // Explicit Product & Category Exclusions
       if (excludedProducts.has(c.productId) || excludedCategories.has(c.categoryId)) {
         continue;
       }
@@ -95,6 +119,19 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
         continue;
       }
 
+      // Allergy & Ingredient Exclusion
+      const prodText = `${c.productName} ${c.title} ${c.description || ""}`.toLowerCase();
+      let hasAllergyConflict = false;
+      for (const allergy of allergiesList) {
+        if (prodText.includes(allergy)) {
+          hasAllergyConflict = true;
+          break;
+        }
+      }
+      if (hasAllergyConflict) {
+        continue;
+      }
+
       eligibleCandidates.push(c);
     }
 
@@ -104,6 +141,7 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
     for (const c of eligibleCandidates) {
       let score = 0;
       const explanations: string[] = [];
+      let isFrequentPurchase = false;
 
       const benchmark = benchmarks.get(c.productId);
 
@@ -177,11 +215,53 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
         score += 5;
       }
 
+      // Factor 5: Historical Purchases Personalization (Max 20 pts)
+      if (orderHistory?.frequentProductIds && orderHistory.frequentProductIds.has(c.productId)) {
+        const pastCount = orderHistory.frequentProductIds.get(c.productId) || 1;
+        score += 20;
+        isFrequentPurchase = true;
+        explanations.push(
+          `Frequently ordered in your past AgroMarket purchases (${pastCount} time${pastCount > 1 ? "s" : ""}).`
+        );
+      }
+
+      // Factor 6: Health Considerations Matching (Max 15 pts)
+      if (healthConsiderations.has("LOW_SODIUM") || healthConsiderations.has("HYPERTENSION_FRIENDLY")) {
+        const freshCat = ["vegetables", "fruits", "roots & tubers"];
+        if (freshCat.some((fc) => c.categoryName.toLowerCase().includes(fc))) {
+          score += 15;
+          explanations.push(`Natural, unprocessed fresh produce aligned with lower-sodium dietary guidance.`);
+        }
+      }
+      if (healthConsiderations.has("DIABETIC_FRIENDLY") || healthConsiderations.has("LOW_GLYCEMIC")) {
+        const diabeticCat = ["legumes & pulses", "vegetables", "fishery & aquaculture"];
+        if (diabeticCat.some((dc) => c.categoryName.toLowerCase().includes(dc))) {
+          score += 15;
+          explanations.push(`High-fiber or lean protein staple aligned with low-glycemic dietary preferences.`);
+        }
+      }
+
+      // Factor 7: Priority Goal Alignment
+      if (priorityGoal === "AFFORDABILITY") {
+        if (c.pricePerUnit <= targetBudget * 0.25) {
+          score += 10;
+        }
+      } else if (priorityGoal === "HEALTH_CONSCIOUS") {
+        const healthCat = ["vegetables", "fruits", "legumes & pulses", "fishery & aquaculture"];
+        if (healthCat.some((hc) => c.categoryName.toLowerCase().includes(hc))) {
+          score += 15;
+        }
+      }
+
+      // Allergen verification warning flag if ingredients details are absent
+      let allergenWarning: string | null = null;
+      if (allergiesList.length > 0 && (!c.description || c.description.length < 15)) {
+        allergenWarning = "Farm ingredients not independently laboratory-tested. If severely sensitive, verify with producer.";
+      }
+
       // Determine initial safe recommended quantity
-      // Default to MOQ; for larger households, adjust if budget and stock allow
       let recommendedQuantity = moq;
       if (householdSize >= 6 && c.quantityAvailable >= moq * 2) {
-        // Only scale if item subtotal remains reasonable
         const doubleCost = moq * 2 * c.pricePerUnit;
         if (doubleCost <= targetBudget * 0.4) {
           recommendedQuantity = moq * 2;
@@ -199,6 +279,8 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
         subtotal,
         benchmark,
         estimatedSavings: totalSavings,
+        allergenWarning,
+        isFrequentPurchase,
       });
     }
 
@@ -210,24 +292,25 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
       return a.candidate.pricePerUnit - b.candidate.pricePerUnit;
     });
 
-    // 4. Greedy Knapsack Basket Assembly within Budget Constraint
+    // 4. Greedy Knapsack Basket Assembly within Hard Budget Constraint
     let currentTotal = 0;
     const selectedItems: SmartBasketItemRecommendation[] = [];
     const categoryCountMap = new Map<string, number>();
 
+    const maxItemsPerCategory = priorityGoal === "VARIETY" ? 1 : 2;
+
     for (const item of scoredCandidates) {
-      // Ensure basket diversity: limit max items per category (e.g. max 2 of same category)
       const catCount = categoryCountMap.get(item.candidate.categoryId) || 0;
-      if (catCount >= 2 && scoredCandidates.length > 5) {
+      if (catCount >= maxItemsPerCategory && scoredCandidates.length > 4) {
         continue;
       }
 
-      // Check if item fits within remaining budget
+      // Strict check: item subtotal must fit within remaining budget
       if (currentTotal + item.subtotal <= targetBudget) {
         currentTotal += item.subtotal;
         categoryCountMap.set(item.candidate.categoryId, catCount + 1);
 
-        item.explanations.push(`Fits comfortably within your ${formatNGN(targetBudget)} basket budget.`);
+        item.explanations.push(`Fits within your ${formatNGN(targetBudget)} basket budget.`);
 
         selectedItems.push({
           listingId: item.candidate.id,
@@ -246,6 +329,9 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
           explanations: item.explanations,
           moq: item.candidate.minimumOrderQuantity,
           quantityAvailable: item.candidate.quantityAvailable,
+          imageUrl: item.candidate.imageUrl,
+          allergenWarning: item.allergenWarning,
+          isFrequentPurchase: item.isFrequentPurchase,
           benchmarkPrice: item.benchmark?.benchmarkPrice || null,
           benchmarkUnit: item.benchmark?.unit || null,
           estimatedSavings: item.estimatedSavings,
@@ -253,8 +339,6 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
       }
     }
 
-    // Edge case: If even the single highest-scored item exceeds the entire budget,
-    // Provide clear transparent explanation without silently exceeding budget
     const budgetRemaining = Number((targetBudget - currentTotal).toFixed(2));
     const totalSavings = Number(
       selectedItems.reduce((acc, item) => acc + (item.estimatedSavings || 0), 0).toFixed(2)
@@ -264,17 +348,26 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
       new Set(selectedItems.map((i) => i.categoryName))
     );
 
+    const isFirstTimeCustomer = (orderHistory?.orderCount || 0) === 0;
+
     let rationale = `Balanced produce basket generated for a ${householdSize}-person household in ${targetState}. `;
     if (selectedItems.length > 0) {
       rationale += `Includes ${selectedItems.length} staple item(s) across ${categoriesRepresented.length} category standard(s) optimized for freshness and budget efficiency.`;
+      if (isFirstTimeCustomer) {
+        rationale += ` (First-time customer basket: recommendations will further adapt as you order on AgroMarket.)`;
+      }
     } else {
-      rationale += `No complete produce bundle could be created within your stated budget of ${formatNGN(targetBudget)}. Please increase your budget or adjust minimum order quantities.`;
+      if (candidates.length === 0) {
+        rationale = `Currently, no active marketplace listings match your regional location (${targetState}) or available stock criteria. Try expanding your search location or check back soon.`;
+      } else {
+        rationale = `No complete produce bundle could be created within your stated budget of ${formatNGN(targetBudget)}. Please increase your budget or adjust minimum order quantities.`;
+      }
     }
 
     const explanationNotes = [
       "Generated using AgroMarket's deterministic transparent baseline engine.",
-      "Scoring combines user staple preferences (+35 max), local state availability (+25 max), competitive market price (+20 max), and stock depth (+15 max).",
-      "All prices are authoritative live farm listing prices. No artificial discounts or synthetic markups have been applied.",
+      "Scoring combines user staple preferences, local state availability, competitive market prices, stock depth, and past order history.",
+      "All prices are authoritative live farm listing prices. Delivery fees and logistics are calculated separately at checkout.",
       "Informational commodity guidance only; not a financial or medical nutrition prescription.",
     ];
 
@@ -298,6 +391,8 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
         categoriesRepresented,
         explanationNotes,
         isDeterministic: true,
+        isFirstTimeCustomer,
+        orderHistoryCount: orderHistory?.orderCount || 0,
       },
     };
   }

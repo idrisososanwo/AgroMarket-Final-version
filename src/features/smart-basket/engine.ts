@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { DeterministicRecommendationProvider } from "./provider";
 import {
   CandidateListing,
+  CustomerOrderHistorySummary,
   GenerateBasketInput,
   PriceBenchmark,
   RecommendationContext,
@@ -25,7 +26,8 @@ export class SmartBasketRecommendationEngine {
   }
 
   /**
-   * Orchestrates candidate data retrieval, benchmark resolution, and recommendation execution.
+   * Orchestrates candidate data retrieval, benchmark resolution, order history analysis,
+   * and recommendation execution.
    */
   async generateBasket(
     userId: string,
@@ -34,28 +36,27 @@ export class SmartBasketRecommendationEngine {
   ): Promise<SmartBasketResult> {
     const admin = createAdminClient();
 
-    // 1. Fetch active marketplace listings with authoritative inventory
+    // 1. Fetch active marketplace listings with authoritative inventory & images
     const { data: listingsData, error: listErr } = await admin
       .from("listings")
       .select(`
         id, product_id, seller_id, title, description, price_per_unit, unit,
         minimum_order_quantity, state, lga, pickup_address, status,
         products!inner (
-          id, name, default_unit, category_id,
-          categories!inner (id, name)
+          id, name, default_unit, category_id, slug, image_url,
+          categories!inner (id, name, slug, image_url)
         ),
-        profiles!seller_id (id, full_name),
-        inventory!inner (quantity_on_hand, quantity_reserved, quantity_available)
+        inventory (quantity_on_hand, quantity_reserved, quantity_available),
+        farms (name)
       `)
       .eq("status", "ACTIVE")
-      .gt("inventory.quantity_available", 0)
-      .limit(100);
+      .limit(150);
 
     if (listErr) {
       console.error("SmartBasketRecommendationEngine listings query error:", listErr);
     }
 
-    type QueryRow = {
+    type RawRow = {
       id: string;
       product_id: string;
       seller_id: string;
@@ -72,44 +73,77 @@ export class SmartBasketRecommendationEngine {
         name: string;
         default_unit: string;
         category_id: string;
+        slug: string;
+        image_url: string | null;
         categories: {
           id: string;
           name: string;
+          slug: string;
+          image_url: string | null;
         };
       };
-      profiles: {
-        id: string;
-        full_name: string | null;
-      } | null;
-      inventory: {
-        quantity_on_hand: number;
-        quantity_reserved: number;
-        quantity_available: number;
-      };
+      inventory:
+        | {
+            quantity_on_hand: number;
+            quantity_reserved: number;
+            quantity_available: number;
+          }
+        | Array<{
+            quantity_on_hand: number;
+            quantity_reserved: number;
+            quantity_available: number;
+          }>
+        | null;
+      farms: { name: string | null } | Array<{ name: string | null }> | null;
     };
 
-    const rows = (listingsData || []) as unknown as QueryRow[];
+    const rows = (listingsData || []) as unknown as RawRow[];
+    const candidates: CandidateListing[] = [];
 
-    const candidates: CandidateListing[] = rows.map((r) => ({
-      id: r.id,
-      productId: r.product_id,
-      productName: r.products.name,
-      categoryName: r.products.categories.name,
-      categoryId: r.products.category_id,
-      sellerId: r.seller_id,
-      sellerName: r.profiles?.full_name || "Verified Local Producer",
-      title: r.title,
-      description: r.description,
-      pricePerUnit: Number(r.price_per_unit),
-      unit: r.unit,
-      minimumOrderQuantity: Number(r.minimum_order_quantity || 1),
-      quantityAvailable: Number(r.inventory.quantity_available || 0),
-      state: r.state,
-      lga: r.lga,
-      pickupAddress: r.pickup_address,
-    }));
+    for (const r of rows) {
+      if (!r.products || !r.products.categories) continue;
 
-    // 2. Resolve recent price benchmarks for products in the candidate pool
+      const inv = Array.isArray(r.inventory) ? r.inventory[0] : r.inventory;
+      const onHand = Number(inv?.quantity_on_hand ?? 0);
+      const reserved = Number(inv?.quantity_reserved ?? 0);
+      const qtyAvailable = Number(
+        inv?.quantity_available !== undefined && inv?.quantity_available !== null
+          ? inv.quantity_available
+          : Math.max(0, onHand - reserved)
+      );
+
+      const moq = Math.max(1, Number(r.minimum_order_quantity || 1));
+      // Only include products with available stock meeting MOQ
+      if (qtyAvailable < moq) {
+        continue;
+      }
+
+      const farmObj = Array.isArray(r.farms) ? r.farms[0] : r.farms;
+      const sellerName = farmObj?.name || "Verified Local Producer";
+      const imageUrl = r.products.image_url || r.products.categories.image_url || null;
+
+      candidates.push({
+        id: r.id,
+        productId: r.product_id,
+        productName: r.products.name,
+        categoryName: r.products.categories.name,
+        categoryId: r.products.category_id,
+        sellerId: r.seller_id,
+        sellerName,
+        title: r.title,
+        description: r.description,
+        pricePerUnit: Number(r.price_per_unit),
+        unit: r.unit,
+        minimumOrderQuantity: moq,
+        quantityAvailable: qtyAvailable,
+        state: r.state,
+        lga: r.lga,
+        pickupAddress: r.pickup_address,
+        imageUrl,
+      });
+    }
+
+    // 2. Resolve recent price benchmarks for candidate products
     const productIds = Array.from(new Set(candidates.map((c) => c.productId)));
     const benchmarks = new Map<string, PriceBenchmark>();
 
@@ -137,16 +171,65 @@ export class SmartBasketRecommendationEngine {
       }
     }
 
-    // 3. Assemble Recommendation Context
+    // 3. Load Authenticated User's Historical Orders (Completed/Paid purchases only)
+    const { data: orderRows, error: orderErr } = await admin
+      .from("orders")
+      .select(`
+        id, status, created_at,
+        order_items (
+          product_id, listing_id, product_name_snapshot, quantity, unit_price_snapshot
+        )
+      `)
+      .eq("buyer_id", userId)
+      .in("status", ["PAID", "PROCESSING", "PARTIALLY_FULFILLED", "COMPLETED"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (orderErr) {
+      console.error("SmartBasketRecommendationEngine order history query error:", orderErr);
+    }
+
+    const frequentProductIds = new Map<string, number>();
+    const pastCategories = new Set<string>();
+    const validOrders = (orderRows || []) as Array<{
+      id: string;
+      status: string;
+      order_items: Array<{
+        product_id: string;
+        listing_id: string;
+        product_name_snapshot: string;
+        quantity: number;
+        unit_price_snapshot: number;
+      }>;
+    }>;
+
+    for (const order of validOrders) {
+      const items = order.order_items || [];
+      for (const item of items) {
+        if (item.product_id) {
+          const count = frequentProductIds.get(item.product_id) || 0;
+          frequentProductIds.set(item.product_id, count + 1);
+        }
+      }
+    }
+
+    const orderHistory: CustomerOrderHistorySummary = {
+      frequentProductIds,
+      pastCategories,
+      orderCount: validOrders.length,
+    };
+
+    // 4. Assemble Recommendation Context
     const context: RecommendationContext = {
       userId,
       input,
       preferences,
       candidates,
       benchmarks,
+      orderHistory,
     };
 
-    // 4. Execute Recommendation Provider
+    // 5. Execute Recommendation Provider
     return this.provider.generateRecommendations(context);
   }
 }

@@ -505,4 +505,165 @@ describe("Phase 1.0 Smart Basket Recommendation Engine", () => {
       expect(crateItem?.unit).not.toBe("KG");
     });
   });
+
+  describe("8. Allergy & Voluntary Health Considerations", () => {
+    const provider = new DeterministicRecommendationProvider();
+
+    it("strictly excludes candidate produce that matches known allergy or avoided ingredient", async () => {
+      const context: RecommendationContext = {
+        userId: "user-123",
+        input: {
+          budget: 300000,
+          state: "Lagos",
+          allergies: ["beans", "cowpea"],
+        },
+        candidates: mockCandidates,
+        benchmarks: mockBenchmarks,
+      };
+
+      const result = await provider.generateRecommendations(context);
+      const names = result.items.map((i) => i.productName.toLowerCase());
+      expect(names.some((n) => n.includes("beans") || n.includes("cowpea"))).toBe(false);
+    });
+
+    it("flags allergen warnings when candidate item lacks comprehensive verified details", async () => {
+      const candidatesWithBriefDesc: CandidateListing[] = [
+        ...mockCandidates,
+        {
+          id: "listing-flour-1",
+          productId: "prod-flour-1",
+          productName: "Cassava Flour",
+          categoryName: "Roots & Tubers",
+          categoryId: "a0000000-0000-0000-0000-000000000002",
+          sellerId: "seller-1",
+          title: "Bags of Flour",
+          description: "Fresh flour", // very brief description
+          pricePerUnit: 15000,
+          unit: "Bag",
+          minimumOrderQuantity: 1,
+          quantityAvailable: 10,
+          state: "Lagos",
+        },
+      ];
+
+      const context: RecommendationContext = {
+        userId: "user-123",
+        input: {
+          budget: 300000,
+          state: "Lagos",
+          allergies: ["gluten"],
+        },
+        candidates: candidatesWithBriefDesc,
+        benchmarks: mockBenchmarks,
+      };
+
+      const result = await provider.generateRecommendations(context);
+      const flourItem = result.items.find((i) => i.listingId === "listing-flour-1");
+      if (flourItem) {
+        expect(flourItem.allergenWarning).toBeDefined();
+        expect(flourItem.allergenWarning).toContain("producer");
+      }
+    });
+
+    it("applies positive scoring bias for health considerations like LOW_SODIUM and DIABETIC_FRIENDLY", async () => {
+      const context: RecommendationContext = {
+        userId: "user-123",
+        input: {
+          budget: 300000,
+          state: "Lagos",
+          healthConsiderations: ["LOW_SODIUM", "DIABETIC_FRIENDLY"],
+        },
+        candidates: mockCandidates,
+        benchmarks: mockBenchmarks,
+      };
+
+      const result = await provider.generateRecommendations(context);
+      const tomatoItem = result.items.find((i) => i.categoryName === "Vegetables");
+      expect(tomatoItem).toBeDefined();
+      expect(
+        tomatoItem?.explanations.some((e) => e.includes("dietary guidance") || e.includes("fiber"))
+      ).toBe(true);
+    });
+  });
+
+  describe("9. Customer Order History Personalization", () => {
+    const provider = new DeterministicRecommendationProvider();
+
+    it("boosts candidate score and flags frequent staple when customer has past orders for the item", async () => {
+      const context: RecommendationContext = {
+        userId: "user-buyer-42",
+        input: {
+          budget: 300000,
+          state: "Lagos",
+        },
+        candidates: mockCandidates,
+        benchmarks: mockBenchmarks,
+        orderHistory: {
+          frequentProductIds: new Map([
+            ["b0000000-0000-0000-0000-000000000004", 4], // Ordered Rice 4 times previously
+          ]),
+          pastCategories: new Set(["a0000000-0000-0000-0000-000000000001"]),
+          orderCount: 5,
+        },
+      };
+
+      const result = await provider.generateRecommendations(context);
+      const riceItem = result.items.find((i) => i.productId === "b0000000-0000-0000-0000-000000000004");
+
+      expect(riceItem).toBeDefined();
+      expect(riceItem?.isFrequentPurchase).toBe(true);
+      expect(riceItem?.explanations.some((e) => e.includes("Frequently ordered"))).toBe(true);
+      expect(result.metadata.isFirstTimeCustomer).toBe(false);
+      expect(result.metadata.orderHistoryCount).toBe(5);
+    });
+
+    it("marks isFirstTimeCustomer true and provides adaptive onboarding rationale when order count is 0", async () => {
+      const context: RecommendationContext = {
+        userId: "user-newbie-1",
+        input: {
+          budget: 300000,
+          state: "Lagos",
+        },
+        candidates: mockCandidates,
+        benchmarks: mockBenchmarks,
+        orderHistory: {
+          frequentProductIds: new Map(),
+          pastCategories: new Set(),
+          orderCount: 0,
+        },
+      };
+
+      const result = await provider.generateRecommendations(context);
+      expect(result.metadata.isFirstTimeCustomer).toBe(true);
+      expect(result.rationale).toContain("First-time customer basket");
+    });
+  });
+
+  describe("10. Product Image Propagation", () => {
+    const provider = new DeterministicRecommendationProvider();
+
+    it("preserves real product and category image URLs onto recommended basket items", async () => {
+      const candidatesWithPhotos: CandidateListing[] = [
+        {
+          ...mockCandidates[0],
+          imageUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80",
+        },
+      ];
+
+      const context: RecommendationContext = {
+        userId: "user-123",
+        input: {
+          budget: 200000,
+          state: "Lagos",
+        },
+        candidates: candidatesWithPhotos,
+        benchmarks: mockBenchmarks,
+      };
+
+      const result = await provider.generateRecommendations(context);
+      expect(result.items[0].imageUrl).toBe(
+        "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80"
+      );
+    });
+  });
 });

@@ -7,6 +7,7 @@ import {
 } from "./validation";
 import {
   GenerateBasketInput,
+  PriorityGoal,
   RecommendationStatus,
   SmartBasketItemRecommendation,
   SmartBasketResult,
@@ -33,10 +34,17 @@ export class SmartBasketService {
       return null;
     }
 
+    const meta = (data.metadata as Record<string, unknown>) || {};
+
     return {
       id: data.id,
       userId: data.user_id,
       dietaryPreferences: data.dietary_preferences || [],
+      allergies: Array.isArray(meta.allergies) ? (meta.allergies as string[]) : [],
+      healthConsiderations: Array.isArray(meta.healthConsiderations) ? (meta.healthConsiderations as string[]) : [],
+      dislikedItems: Array.isArray(meta.dislikedItems) ? (meta.dislikedItems as string[]) : [],
+      durationDays: typeof meta.durationDays === "number" ? meta.durationDays : undefined,
+      priorityGoal: typeof meta.priorityGoal === "string" ? (meta.priorityGoal as PriorityGoal) : undefined,
       familySize: Number(data.family_size || 4),
       budgetTargetMonthly: data.budget_target_monthly !== null ? Number(data.budget_target_monthly) : null,
       budgetTargetBasket: data.budget_target_basket !== null ? Number(data.budget_target_basket) : null,
@@ -48,7 +56,7 @@ export class SmartBasketService {
       basketPurpose: data.basket_purpose || "HOUSEHOLD",
       state: data.state,
       lga: data.lga,
-      metadata: (data.metadata as Record<string, unknown>) || {},
+      metadata: meta,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -63,6 +71,15 @@ export class SmartBasketService {
   ): Promise<UserPreferences> {
     const validated = updateUserPreferencesSchema.parse(input);
     const admin = createAdminClient();
+
+    const mergedMetadata: Record<string, unknown> = {
+      ...((validated.metadata as Record<string, unknown>) || {}),
+    };
+    if (validated.allergies !== undefined) mergedMetadata.allergies = validated.allergies;
+    if (validated.healthConsiderations !== undefined) mergedMetadata.healthConsiderations = validated.healthConsiderations;
+    if (validated.dislikedItems !== undefined) mergedMetadata.dislikedItems = validated.dislikedItems;
+    if (validated.durationDays !== undefined) mergedMetadata.durationDays = validated.durationDays;
+    if (validated.priorityGoal !== undefined) mergedMetadata.priorityGoal = validated.priorityGoal;
 
     const { data: upserted, error } = await admin
       .from("user_preferences")
@@ -81,7 +98,7 @@ export class SmartBasketService {
           excluded_categories: validated.excludedCategories,
           purchasing_frequency: validated.purchasingFrequency,
           basket_purpose: validated.basketPurpose,
-          metadata: (validated.metadata as Record<string, unknown>) || {},
+          metadata: mergedMetadata,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }
@@ -105,10 +122,17 @@ export class SmartBasketService {
       },
     });
 
+    const savedMeta = (upserted.metadata as Record<string, unknown>) || {};
+
     return {
       id: upserted.id,
       userId: upserted.user_id,
       dietaryPreferences: upserted.dietary_preferences || [],
+      allergies: Array.isArray(savedMeta.allergies) ? (savedMeta.allergies as string[]) : [],
+      healthConsiderations: Array.isArray(savedMeta.healthConsiderations) ? (savedMeta.healthConsiderations as string[]) : [],
+      dislikedItems: Array.isArray(savedMeta.dislikedItems) ? (savedMeta.dislikedItems as string[]) : [],
+      durationDays: typeof savedMeta.durationDays === "number" ? savedMeta.durationDays : undefined,
+      priorityGoal: typeof savedMeta.priorityGoal === "string" ? (savedMeta.priorityGoal as PriorityGoal) : undefined,
       familySize: Number(upserted.family_size),
       budgetTargetMonthly: upserted.budget_target_monthly !== null ? Number(upserted.budget_target_monthly) : null,
       budgetTargetBasket: upserted.budget_target_basket !== null ? Number(upserted.budget_target_basket) : null,
@@ -120,7 +144,7 @@ export class SmartBasketService {
       basketPurpose: upserted.basket_purpose,
       state: upserted.state,
       lga: upserted.lga,
-      metadata: (upserted.metadata as Record<string, unknown>) || {},
+      metadata: savedMeta,
       createdAt: upserted.created_at,
       updatedAt: upserted.updated_at,
     };

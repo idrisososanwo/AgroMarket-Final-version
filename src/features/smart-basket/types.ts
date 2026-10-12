@@ -10,6 +10,8 @@ export type BasketPurpose = "HOUSEHOLD" | "BULK_SHARING" | "SMALL_COMMERCIAL" | 
 
 export type RecommendationStatus = "GENERATED" | "ACCEPTED" | "MODIFIED" | "REJECTED";
 
+export type PriorityGoal = "AFFORDABILITY" | "VARIETY" | "FREQUENT_STAPLES" | "HEALTH_CONSCIOUS";
+
 export interface UserPreferences {
   id: string;
   userId: string;
@@ -21,6 +23,11 @@ export interface UserPreferences {
   preferredCategories: string[];
   excludedProducts: string[];
   excludedCategories: string[];
+  allergies?: string[];
+  healthConsiderations?: string[];
+  dislikedItems?: string[];
+  durationDays?: number;
+  priorityGoal?: PriorityGoal;
   purchasingFrequency: PurchasingFrequency;
   basketPurpose: BasketPurpose;
   state: string | null;
@@ -37,6 +44,11 @@ export interface UpdateUserPreferencesInput {
   lga?: string | null;
   familySize?: number;
   dietaryPreferences?: string[];
+  allergies?: string[];
+  healthConsiderations?: string[];
+  dislikedItems?: string[];
+  durationDays?: number;
+  priorityGoal?: PriorityGoal;
   preferredStaples?: string[];
   preferredCategories?: string[];
   excludedProducts?: string[];
@@ -52,6 +64,11 @@ export interface GenerateBasketInput {
   lga?: string | null;
   familySize?: number;
   basketPurpose?: BasketPurpose;
+  durationDays?: number;
+  priorityGoal?: PriorityGoal;
+  allergies?: string[];
+  healthConsiderations?: string[];
+  dislikedItems?: string[];
   preferredStaples?: string[];
   preferredCategories?: string[];
   excludedProducts?: string[];
@@ -75,6 +92,9 @@ export interface SmartBasketItemRecommendation {
   explanations: string[];
   moq: number;
   quantityAvailable: number;
+  imageUrl?: string | null;
+  allergenWarning?: string | null;
+  isFrequentPurchase?: boolean;
   benchmarkPrice?: number | null;
   benchmarkUnit?: string | null;
   estimatedSavings?: number;
@@ -100,6 +120,8 @@ export interface SmartBasketResult {
     categoriesRepresented: string[];
     explanationNotes: string[];
     isDeterministic: boolean;
+    isFirstTimeCustomer?: boolean;
+    orderHistoryCount?: number;
     [key: string]: unknown;
   };
 }
@@ -121,6 +143,7 @@ export interface CandidateListing {
   state: string;
   lga?: string | null;
   pickupAddress?: string;
+  imageUrl?: string | null;
 }
 
 export interface PriceBenchmark {
@@ -130,12 +153,19 @@ export interface PriceBenchmark {
   dataQualityLabel: string;
 }
 
+export interface CustomerOrderHistorySummary {
+  frequentProductIds: Map<string, number>;
+  pastCategories: Set<string>;
+  orderCount: number;
+}
+
 export interface RecommendationContext {
   userId: string;
   input: GenerateBasketInput;
   preferences?: UserPreferences | null;
   candidates: CandidateListing[];
   benchmarks: Map<string, PriceBenchmark>;
+  orderHistory?: CustomerOrderHistorySummary;
 }
 
 /**
