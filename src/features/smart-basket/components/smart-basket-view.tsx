@@ -61,12 +61,14 @@ interface SmartBasketViewProps {
   initialPreferences: UserPreferences | null;
   initialBasket: SmartBasketResult | null;
   categories: { id: string; name: string; slug: string }[];
+  isAuthenticated?: boolean;
 }
 
 export function SmartBasketView({
   initialPreferences,
   initialBasket,
   categories,
+  isAuthenticated = true,
 }: SmartBasketViewProps) {
   const router = useRouter();
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -400,6 +402,26 @@ export function SmartBasketView({
         <div>
           <BackButton fallbackHref="/marketplace" label="Back to Marketplace" />
         </div>
+
+        {/* Guest Mode Notice */}
+        {!isAuthenticated && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="inline-block px-2 py-0.5 rounded font-bold bg-amber-200 text-amber-900 text-[10px] uppercase tracking-wider">
+                Guest Mode
+              </span>
+              <span>
+                You are viewing Smart Basket as a guest. <strong>Sign in</strong> to personalize recommendations with your past AgroMarket orders and save dietary preferences.
+              </span>
+            </div>
+            <Link
+              href="/auth/login?redirectTo=/smart-basket"
+              className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition shrink-0 whitespace-nowrap"
+            >
+              Sign In to Personalize →
+            </Link>
+          </div>
+        )}
 
         {/* Header Banner */}
         <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-xs">

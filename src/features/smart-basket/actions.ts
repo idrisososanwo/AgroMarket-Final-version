@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/lib/auth/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { SmartBasketService } from "./service";
 import {
   ActionResponse,
@@ -24,7 +24,10 @@ export async function saveUserPreferencesAction(
   input: UpdateUserPreferencesInput
 ): Promise<ActionResponse<UserPreferences>> {
   try {
-    const user = await requireAuth();
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "Please sign in to save your preferences." };
+    }
     const validated = updateUserPreferencesSchema.parse(input);
     const saved = await SmartBasketService.saveUserPreferences(user.id, validated);
 
@@ -49,7 +52,13 @@ export async function generateSmartBasketAction(
   input: GenerateBasketInput
 ): Promise<ActionResponse<SmartBasketResult>> {
   try {
-    const user = await requireAuth();
+    const user = await getCurrentUser();
+    if (!user) {
+      return {
+        success: false,
+        error: "Please sign in to your AgroMarket account to generate a personalized Smart Basket.",
+      };
+    }
     const validated = generateBasketSchema.parse(input);
     const result = await SmartBasketService.generateSmartBasket(user.id, validated);
 
@@ -74,7 +83,10 @@ export async function addSmartBasketToCartAction(input: {
   items: Array<{ listingId: string; quantity: number }>;
 }): Promise<ActionResponse<{ addedCount: number; skippedCount: number; messages: string[] }>> {
   try {
-    const user = await requireAuth();
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "Please sign in to add items to your cart." };
+    }
     const validated = addSmartBasketToCartSchema.parse(input);
     const res = await SmartBasketService.addSmartBasketToCart(
       user.id,
@@ -108,7 +120,10 @@ export async function updateBasketFeedbackAction(input: {
   status: "ACCEPTED" | "MODIFIED" | "REJECTED";
 }): Promise<ActionResponse<{ status: string }>> {
   try {
-    const user = await requireAuth();
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "Please sign in to update feedback." };
+    }
     const validated = updateBasketFeedbackSchema.parse(input);
     await SmartBasketService.updateBasketFeedback(
       user.id,
