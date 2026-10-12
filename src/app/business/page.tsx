@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth/server";
-import { Building2, ArrowLeft } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const metadata = {
   title: "Agribusiness Workspace | AgroMarket",
@@ -12,12 +12,20 @@ export default async function BusinessWorkspacePage() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-12">
       <div className="mx-auto max-w-4xl space-y-6">
-        <Link
-          href="/account"
-          className="inline-flex items-center text-xs font-medium text-primary-700 hover:text-primary-800"
-        >
-          <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to Account
-        </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/service-provider"
+            label="Back to Provider Hub"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Provider Hub", href: "/service-provider" },
+              { label: "Agribusiness Console" },
+            ]}
+          />
+        </div>
 
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <div className="flex items-center space-x-3 mb-4">

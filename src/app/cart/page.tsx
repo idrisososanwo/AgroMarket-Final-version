@@ -4,6 +4,8 @@ import { getBuyerCart } from "@/features/cart/queries";
 import { CartView } from "@/features/cart/components/cart-view";
 import { createClient } from "@/lib/supabase/server";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -36,13 +38,19 @@ export default async function CartPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        {/* Navigation Breadcrumbs */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/marketplace" className="hover:text-emerald-700 transition">
-            Marketplace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Shopping Cart</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/marketplace"
+            label="Back to Marketplace"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Marketplace", href: "/marketplace" },
+              { label: "Shopping Cart" },
+            ]}
+          />
         </div>
 
         {/* Page Header */}
@@ -60,7 +68,7 @@ export default async function CartPage() {
             href="/marketplace"
             className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition flex items-center gap-1 self-start sm:self-auto"
           >
-            &larr; Continue Shopping
+            Continue Shopping &rarr;
           </Link>
         </div>
 

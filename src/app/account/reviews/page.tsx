@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
 import { getMyReviews } from "@/features/reviews/queries";
-import { Star, ShieldCheck, ArrowLeft, ArrowRight, MessageSquare } from "lucide-react";
+import { Star, ShieldCheck, ArrowRight, MessageSquare } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +18,20 @@ export default async function AccountReviewsPage() {
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-16 pt-8">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Breadcrumb */}
-        <Link
-          href="/account"
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Account
-        </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/account"
+            label="Back to Account"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "My Reviews" },
+            ]}
+          />
+        </div>
 
         {/* Page Header */}
         <div>

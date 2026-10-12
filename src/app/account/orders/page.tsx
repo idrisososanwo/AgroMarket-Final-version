@@ -4,6 +4,8 @@ import { getBuyerOrdersResult } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -17,13 +19,19 @@ export default async function BuyerOrdersPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Navigation Breadcrumbs */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/account" className="hover:text-emerald-700 transition">
-            Account
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">My Orders</span>
+        {/* Navigation Bar with BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/account"
+            label="Back to Account"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "My Orders" },
+            ]}
+          />
         </div>
 
         {/* Page Header */}

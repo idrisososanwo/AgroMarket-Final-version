@@ -5,7 +5,7 @@ import { SellerInventoryControls } from "@/features/marketplace/components/selle
 import { formatNGN } from "@/features/marketplace/constants";
 import { ListingStatus } from "@/features/marketplace/types";
 import { DeleteListingDialog } from "@/features/marketplace/components/delete-listing-dialog";
-import { PlusCircle, Eye, Edit3, ArrowLeft } from "lucide-react";
+import { PlusCircle, Eye, Edit3 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +47,8 @@ function getStatusBadge(status: ListingStatus) {
       );
   }
 }
+
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface FarmerListingsPageProps {
   searchParams?: Promise<{
@@ -97,13 +99,19 @@ export default async function FarmerListingsPage({ searchParams }: FarmerListing
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        {/* Navigation Breadcrumbs */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/farmer" className="hover:text-emerald-700 transition flex items-center gap-1">
-            <ArrowLeft className="h-3 w-3" /> Farmer Workspace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">My Produce & Inventory</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer"
+            label="Back to Farmer Workspace"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "My Produce & Inventory" },
+            ]}
+          />
         </div>
 
         {/* Header */}

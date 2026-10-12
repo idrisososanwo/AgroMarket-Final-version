@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { requireAnyRole } from "@/lib/auth/server";
 import { getCanonicalProducts } from "@/features/marketplace/queries";
 import { ListingForm } from "@/features/marketplace/components/listing-form";
+
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,20 @@ export default async function NewListingPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
-        {/* Navigation Breadcrumbs */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/farmer/listings" className="hover:text-emerald-700 transition">
-            My Listings
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">New Listing</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer/listings"
+            label="Back to My Produce"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "My Produce", href: "/farmer/listings" },
+              { label: "New Listing" },
+            ]}
+          />
         </div>
 
         {/* Header */}

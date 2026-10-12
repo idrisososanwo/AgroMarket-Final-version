@@ -4,6 +4,8 @@ import { getMarketplaceListingById } from "@/features/marketplace/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { AddToCartForm } from "@/features/marketplace/components/add-to-cart-form";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 interface ListingDetailPageProps {
   params: Promise<{
     listingId: string;
@@ -25,18 +27,24 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Navigation Breadcrumbs */}
-        <nav className="mb-6 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/marketplace" className="hover:text-emerald-700 transition">
-            Marketplace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-700">{listing.categoryName}</span>
-          <span>/</span>
-          <span className="text-neutral-900 font-semibold truncate max-w-[200px]">
-            {listing.title}
-          </span>
-        </nav>
+        {/* Navigation Bar with Back Button & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/marketplace"
+            label="Back to Marketplace"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Marketplace", href: "/marketplace" },
+              {
+                label: listing.categoryName,
+                href: `/marketplace?category=${encodeURIComponent(listing.categoryName)}`,
+              },
+              { label: listing.title },
+            ]}
+          />
+        </div>
 
         {/* Main Listing Showcase */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

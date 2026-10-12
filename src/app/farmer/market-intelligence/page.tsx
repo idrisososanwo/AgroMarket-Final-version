@@ -1,11 +1,11 @@
 import React from "react";
 import { Metadata } from "next";
-import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PriceService } from "@/features/prices/service";
 import { DemandService } from "@/features/demand/service";
 import { FarmerPriceIntelligence } from "@/features/prices/components/farmer-price-intelligence";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Farmer Market Intelligence & Demand Signals | AgroMarket",
@@ -49,15 +49,23 @@ export default async function FarmerMarketIntelligencePage({
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer"
+            label="Back to Farmer Workspace"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "Market Intelligence" },
+            ]}
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs text-gray-500 mb-1">
-              <Link href="/farmer" className="hover:text-emerald-700">
-                Farmer Portal
-              </Link>
-              <span>/</span>
-              <span className="text-gray-900 font-medium">Market Intelligence</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
               Farm Market Intelligence & Demand Signals
             </h1>

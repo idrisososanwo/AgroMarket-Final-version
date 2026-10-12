@@ -15,12 +15,12 @@ import {
   MapPin,
   ShieldCheck,
   Wrench,
-  ArrowLeft,
   Banknote,
   CheckCircle2,
   XCircle,
   Lock,
 } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface ServiceDetailPageProps {
   params: Promise<{
@@ -67,13 +67,20 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-16 pt-8">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Navigation Breadcrumb */}
-        <Link
-          href="/services"
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to All Services
-        </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/services"
+            label="Back to All Services"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Services", href: "/services" },
+              { label: service.title },
+            ]}
+          />
+        </div>
 
         {/* Main Service Card */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">

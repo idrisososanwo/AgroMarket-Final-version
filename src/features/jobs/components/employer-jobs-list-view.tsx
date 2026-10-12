@@ -2,7 +2,9 @@ import Link from "next/link";
 import { JobListing } from "../types";
 import { JobStatusBadge } from "./job-status-badge";
 import { formatNGN } from "@/features/marketplace/constants";
-import { Briefcase, Plus, ArrowRight, Users, Calendar, MapPin, ArrowLeft } from "lucide-react";
+import { Briefcase, Plus, ArrowRight, Users, Calendar, MapPin } from "lucide-react";
+
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface EmployerJobsListViewProps {
   jobs: JobListing[];
@@ -17,17 +19,24 @@ export function EmployerJobsListView({
 }: EmployerJobsListViewProps) {
   const backHref = `/${portalType}`;
   const newJobHref = `/${portalType}/jobs/new`;
+  const portalName = portalType === "farmer" ? "Farmer Workspace" : "Agribusiness Workspace";
 
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-16 pt-8">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Breadcrumb */}
-        <Link
-          href={backHref}
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Dashboard
-        </Link>
+        {/* Navigation Breadcrumb & Back */}
+        <div className="space-y-3">
+          <BackButton
+            fallbackHref={backHref}
+            fallbackLabel={`Back to ${portalName}`}
+          />
+          <Breadcrumbs
+            items={[
+              { label: portalName, href: backHref },
+              { label: portalType === "farmer" ? "Farm Labor & Jobs" : "Commercial Job Postings" },
+            ]}
+          />
+        </div>
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

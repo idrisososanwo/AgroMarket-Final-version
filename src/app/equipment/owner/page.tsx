@@ -19,6 +19,8 @@ import {
   Eye,
 } from "lucide-react";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -41,17 +43,19 @@ export default async function EquipmentOwnerDashboardPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 pb-16 pt-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500">
-          <Link href="/account" className="hover:text-neutral-900 transition-colors">
-            Account
-          </Link>
-          <span>/</span>
-          <Link href="/equipment" className="hover:text-neutral-900 transition-colors">
-            Equipment
-          </Link>
-          <span>/</span>
-          <span className="text-emerald-700">Owner Console</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/service-provider"
+            label="Back to Provider Hub"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Provider Hub", href: "/service-provider" },
+              { label: "Equipment Owner Console" },
+            ]}
+          />
         </div>
 
         {/* Dashboard Header */}

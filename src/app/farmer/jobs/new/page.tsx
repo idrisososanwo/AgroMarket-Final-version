@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { requireAnyRole } from "@/lib/auth/server";
 import { EmployerJobForm } from "@/features/jobs/components/employer-job-form";
-import { ArrowLeft } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +15,16 @@ export default async function FarmerNewJobPage() {
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-16 pt-8">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
-        <Link
-          href="/farmer/jobs"
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to My Job Postings
-        </Link>
+        <div className="space-y-3">
+          <BackButton fallbackHref="/farmer/jobs" fallbackLabel="Back to Farm Labor & Jobs" />
+          <Breadcrumbs
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "Farm Labor & Jobs", href: "/farmer/jobs" },
+              { label: "Post New Job" },
+            ]}
+          />
+        </div>
 
         <EmployerJobForm
           mode="create"

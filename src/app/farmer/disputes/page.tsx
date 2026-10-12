@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth/server";
 import { getSellerDisputes } from "@/features/disputes/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { getDisputeStatusBadge } from "@/app/account/disputes/page";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +18,19 @@ export default async function FarmerDisputesPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/farmer" className="hover:text-emerald-700 transition">
-            Farmer Workspace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Disputes & Claims</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer"
+            label="Back to Farmer Workspace"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "Disputes & Claims" },
+            ]}
+          />
         </div>
 
         {/* Header */}

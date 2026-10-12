@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getEquipmentById } from "@/features/equipment/queries";
 import { getReviews } from "@/features/reviews/queries";
 import { getCurrentUser } from "@/lib/auth/server";
@@ -15,7 +14,6 @@ import {
   MapPin,
   ShieldCheck,
   Tractor,
-  ArrowLeft,
   CheckCircle2,
   XCircle,
   UserCheck,
@@ -23,6 +21,8 @@ import {
   FileText,
   Shield,
 } from "lucide-react";
+
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface EquipmentDetailPageProps {
   params: Promise<{
@@ -72,27 +72,19 @@ export default async function EquipmentDetailPage({ params }: EquipmentDetailPag
   return (
     <div className="min-h-screen bg-neutral-50/70 pb-16 pt-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500">
-          <Link href="/" className="hover:text-neutral-900 transition-colors">
-            Home
-          </Link>
-          <span>/</span>
-          <Link href="/equipment" className="hover:text-neutral-900 transition-colors">
-            Equipment Rental
-          </Link>
-          <span>/</span>
-          <span className="text-emerald-700 truncate max-w-xs">{equipment.name}</span>
-        </div>
-
-        {/* Back Link */}
-        <div>
-          <Link
-            href="/equipment"
-            className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Equipment Catalog
-          </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/equipment"
+            label="Back to Equipment Catalog"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Equipment Rental", href: "/equipment" },
+              { label: equipment.name },
+            ]}
+          />
         </div>
 
         {/* Two-Column Layout */}

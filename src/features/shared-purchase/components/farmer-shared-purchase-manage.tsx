@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   AlertCircle,
   Loader2,
 } from "lucide-react";
@@ -19,6 +17,7 @@ import {
   transitionSharedPurchaseStatusAction,
   cancelSharedPurchaseAction,
 } from "../actions";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface FarmerSharedPurchaseManageProps {
   pool: SharedPurchaseDetail;
@@ -76,14 +75,18 @@ export function FarmerSharedPurchaseManage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
-      <div>
-        <Link
-          href="/farmer/shared-purchases"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to My Pools
-        </Link>
+      <div className="space-y-3">
+        <BackButton
+          fallbackHref="/farmer/shared-purchases"
+          fallbackLabel="Back to Shared Pools"
+        />
+        <Breadcrumbs
+          items={[
+            { label: "Farmer Workspace", href: "/farmer" },
+            { label: "Shared Purchases", href: "/farmer/shared-purchases" },
+            { label: pool.title },
+          ]}
+        />
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black text-foreground">{pool.title}</h1>

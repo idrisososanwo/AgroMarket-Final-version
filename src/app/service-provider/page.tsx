@@ -9,6 +9,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -45,6 +47,20 @@ export default async function ServiceProviderHubPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F4] py-10 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-8">
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/"
+            label="Back to Marketplace"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Provider Hub" },
+            ]}
+          />
+        </div>
+
         {/* Workspace Mode Switcher Banner */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 shadow-xs">
           <div className="flex items-center gap-3">

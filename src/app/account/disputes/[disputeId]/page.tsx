@@ -8,6 +8,7 @@ import {
   AddEvidenceModal,
   BuyerCancelDisputeButton,
 } from "@/features/disputes/components/dispute-detail-actions";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface DisputeDetailPageProps {
   params: Promise<{
@@ -40,19 +41,16 @@ export default async function BuyerDisputeDetailPage({
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/account" className="hover:text-emerald-700 transition">
-            Account
-          </Link>
-          <span>/</span>
-          <Link href="/account/disputes" className="hover:text-emerald-700 transition">
-            Disputes
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">
-            Case #{dispute.id.slice(0, 8)}
-          </span>
+        {/* Navigation Breadcrumbs & Back */}
+        <div className="space-y-3">
+          <BackButton fallbackHref="/account/disputes" fallbackLabel="Back to My Disputes" />
+          <Breadcrumbs
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "Disputes", href: "/account/disputes" },
+              { label: `Case #${dispute.id.slice(0, 8)}` },
+            ]}
+          />
         </div>
 
         {/* Header Card */}

@@ -4,6 +4,8 @@ import { getSellerOrders } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -19,13 +21,19 @@ export default async function FarmerOrdersPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        {/* Navigation Breadcrumbs */}
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/farmer" className="hover:text-emerald-700 transition">
-            Farmer Workspace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Incoming Orders</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer"
+            label="Back to Farmer Workspace"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "Incoming Orders" },
+            ]}
+          />
         </div>
 
         {/* Header */}
@@ -86,7 +94,7 @@ export default async function FarmerOrdersPage() {
                     <th scope="col" className="px-3 py-3.5">Quantity</th>
                     <th scope="col" className="px-3 py-3.5">Value (₦)</th>
                     <th scope="col" className="px-3 py-3.5">Delivery Destination</th>
-                    <th scope="col" className="py-3.5 pl-3 pr-6 text-right">Order Status</th>
+                    <th scope="col" className="py-3.5 pl-3 pr-6 text-right">Order Status & Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 bg-white">
@@ -94,7 +102,12 @@ export default async function FarmerOrdersPage() {
                     <tr key={item.id} className="hover:bg-neutral-50/50 transition">
                       {/* Order Number & Date */}
                       <td className="py-4 pl-6 pr-3 whitespace-nowrap">
-                        <div className="font-bold text-neutral-900">{item.orderNumber}</div>
+                        <Link
+                          href={`/account/orders/${item.orderId}`}
+                          className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline transition"
+                        >
+                          {item.orderNumber}
+                        </Link>
                         <div className="text-[11px] text-neutral-400 mt-0.5">
                           {new Date(item.createdAt).toLocaleDateString("en-NG", { dateStyle: "medium" })}
                         </div>
@@ -131,9 +144,17 @@ export default async function FarmerOrdersPage() {
                         <div>{item.deliveryLga}</div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status & Link */}
                       <td className="py-4 pl-3 pr-6 text-right whitespace-nowrap">
-                        {getOrderStatusBadge(item.orderStatus)}
+                        <div className="flex items-center justify-end gap-2">
+                          {getOrderStatusBadge(item.orderStatus)}
+                          <Link
+                            href={`/account/orders/${item.orderId}`}
+                            className="rounded-lg bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                          >
+                            View &rarr;
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

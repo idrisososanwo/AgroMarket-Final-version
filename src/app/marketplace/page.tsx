@@ -5,6 +5,8 @@ import { MarketplaceFilterBar } from "@/features/marketplace/components/marketpl
 import { IntelligenceContextBanner } from "@/features/action-integration/components/intelligence-context-banner";
 import { AlertCircle } from "lucide-react";
 
+import { Breadcrumbs } from "@/components/ui";
+
 interface MarketplacePageProps {
   searchParams: Promise<{
     search?: string;
@@ -83,6 +85,25 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
             recommendationId={resolvedParams.intel_ref}
           />
         )}
+
+        {/* Navigation Breadcrumbs */}
+        <div className="mb-4 flex items-center justify-between">
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Marketplace" },
+              ...(resolvedParams.category && resolvedParams.category !== "all"
+                ? [{ label: resolvedParams.category }]
+                : []),
+            ]}
+          />
+          <Link
+            href="/"
+            className="text-xs font-semibold text-neutral-600 hover:text-emerald-700 transition"
+          >
+            &larr; Home
+          </Link>
+        </div>
 
         {/* Page Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">

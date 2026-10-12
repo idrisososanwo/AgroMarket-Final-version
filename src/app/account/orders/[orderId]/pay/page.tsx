@@ -5,6 +5,8 @@ import { getOrderDetailsResult } from "@/features/orders/queries";
 import { CheckoutForm } from "@/features/payments/components/checkout-form";
 import { formatNGN } from "@/features/marketplace/constants";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 interface OrderPayPageProps {
   params: Promise<{
     orderId: string;
@@ -55,17 +57,21 @@ export default async function OrderPayPage({ params }: OrderPayPageProps) {
   return (
     <div className="min-h-screen bg-stone-50 py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center gap-2 text-sm text-emerald-700">
-          <Link href="/account/orders" className="hover:underline">
-            Orders
-          </Link>
-          <span>/</span>
-          <Link href={`/account/orders/${order.id}`} className="hover:underline">
-            {order.orderNumber}
-          </Link>
-          <span>/</span>
-          <span className="text-emerald-950 font-medium">Checkout</span>
+        {/* Navigation Bar with BackButton & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref={`/account/orders/${order.id}`}
+            label="Back to Order Details"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "Orders", href: "/account/orders" },
+              { label: order.orderNumber, href: `/account/orders/${order.id}` },
+              { label: "Checkout" },
+            ]}
+          />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">

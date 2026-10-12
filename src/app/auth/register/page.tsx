@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { AgroMarketLogo } from "@/components/brand";
 import { NIGERIAN_STATES } from "@/features/marketplace/constants";
+import { BackButton } from "@/components/ui/back-button";
 
 type AccountRoleType = "BUYER" | "FARMER" | "SERVICE_PROVIDER";
 type ProviderSubtype = "EQUIPMENT_OWNER" | "SERVICE_PROVIDER" | "BUSINESS";
@@ -51,6 +52,17 @@ export default function RegisterPage() {
           {/* STEP 1: Account Type Selection Cards */}
           {selectedRole === null ? (
             <div className="space-y-6">
+              {/* Back to Sign In Header Bar */}
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                <BackButton fallbackHref="/auth/login" label="Back to Sign In" variant="ghost" />
+                <Link
+                  href="/"
+                  className="text-xs font-semibold text-neutral-500 hover:text-emerald-700 transition"
+                >
+                  Marketplace Home &rarr;
+                </Link>
+              </div>
+
               <div className="text-center sm:text-left">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">
                   <Sparkles className="h-3.5 w-3.5 text-emerald-700" />

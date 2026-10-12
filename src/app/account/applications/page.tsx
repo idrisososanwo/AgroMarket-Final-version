@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
 import { getMyApplications } from "@/features/jobs/queries";
 import { ApplicationStatus, APPLICATION_STATUS_LABELS } from "@/features/jobs/types";
-import { Briefcase, ArrowLeft, ArrowRight, Calendar, FileText, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Briefcase, ArrowRight, Calendar, FileText, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -58,13 +59,20 @@ export default async function AccountApplicationsPage() {
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-16 pt-8">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Breadcrumb */}
-        <Link
-          href="/account"
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Account
-        </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/account"
+            label="Back to Account"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "My Applications" },
+            ]}
+          />
+        </div>
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

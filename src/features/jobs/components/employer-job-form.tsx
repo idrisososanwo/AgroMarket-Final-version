@@ -129,6 +129,21 @@ export function EmployerJobForm({
     }
   };
 
+  const handleCancel = () => {
+    if (typeof window !== "undefined") {
+      const referrer = document.referrer;
+      const isInternal =
+        Boolean(referrer) &&
+        referrer.startsWith(window.location.origin) &&
+        referrer !== window.location.href;
+      if (isInternal && window.history.length > 1) {
+        router.back();
+        return;
+      }
+    }
+    router.push(onSuccessRedirect || "/farmer/jobs");
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -370,7 +385,7 @@ export function EmployerJobForm({
       <div className="pt-2 border-t border-neutral-100 flex items-center justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleCancel}
           disabled={isSubmitting}
           className="rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition min-h-[44px]"
         >

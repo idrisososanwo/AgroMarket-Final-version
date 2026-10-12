@@ -5,7 +5,8 @@ import { hasRole } from "@/lib/auth/roles";
 import { getEquipmentById } from "@/features/equipment/queries";
 import { OwnerEquipmentForm } from "@/features/equipment/components/owner-equipment-form";
 import { OwnerAvailabilityToggle } from "@/features/equipment/components/owner-availability-toggle";
-import { Tractor, ArrowLeft, Eye } from "lucide-react";
+import { Tractor, Eye } from "lucide-react";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface ManageEquipmentPageProps {
   params: Promise<{
@@ -47,13 +48,22 @@ export default async function ManageEquipmentPage({
   return (
     <div className="min-h-screen bg-neutral-50/70 pb-16 pt-8">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Breadcrumb */}
-        <Link
-          href="/equipment/owner"
-          className="inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Owner Console
-        </Link>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/equipment/owner"
+            label="Back to Owner Console"
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              { label: "Provider Hub", href: "/service-provider" },
+              { label: "Owner Console", href: "/equipment/owner" },
+              { label: equipment.name, href: `/equipment/${equipment.id}` },
+              { label: "Manage" },
+            ]}
+          />
+        </div>
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

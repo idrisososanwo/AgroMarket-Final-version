@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   Users,
   ShieldCheck,
   TrendingUp,
@@ -14,6 +12,7 @@ import { formatNGN } from "@/features/marketplace/constants";
 import { SharedPurchaseDetail, SharedPurchaseParticipantDetail } from "../types";
 import { SharedPurchaseProgressBar } from "./shared-purchase-progress-bar";
 import { JoinSharedPurchaseModal } from "./join-shared-purchase-modal";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface SharedPurchaseDetailViewProps {
   pool: SharedPurchaseDetail;
@@ -41,15 +40,19 @@ export function SharedPurchaseDetailView({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
-      {/* Back Link */}
-      <div>
-        <Link
-          href="/shared-purchases"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Shared Purchases
-        </Link>
+      {/* Back Link & Breadcrumbs */}
+      <div className="space-y-3">
+        <BackButton
+          fallbackHref="/shared-purchases"
+          fallbackLabel="Back to Shared Purchases"
+        />
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Shared Purchases", href: "/shared-purchases" },
+            { label: pool.title },
+          ]}
+        />
       </div>
 
       {/* Main Grid */}

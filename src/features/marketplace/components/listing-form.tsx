@@ -98,6 +98,21 @@ export function ListingForm({ canonicalProducts, initialData, mode }: ListingFor
     });
   };
 
+  const handleCancel = () => {
+    if (typeof window !== "undefined") {
+      const referrer = document.referrer;
+      const isInternal =
+        Boolean(referrer) &&
+        referrer.startsWith(window.location.origin) &&
+        referrer !== window.location.href;
+      if (isInternal && window.history.length > 1) {
+        router.back();
+        return;
+      }
+    }
+    router.push("/farmer/listings");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {errorMessage && (
@@ -347,7 +362,7 @@ export function ListingForm({ canonicalProducts, initialData, mode }: ListingFor
       <div className="flex items-center justify-end gap-3 pt-4">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleCancel}
           className="rounded-lg border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50"
         >
           Cancel

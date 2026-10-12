@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { requireAuth } from "@/lib/auth/server";
 import { getOrderById } from "@/features/orders/queries";
 import { CreateDisputeForm } from "@/features/disputes/components/create-dispute-form";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface NewDisputePageProps {
   params: Promise<{
@@ -57,24 +57,20 @@ export default async function NewDisputePage({
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/account" className="hover:text-emerald-700 transition">
-            Account
-          </Link>
-          <span>/</span>
-          <Link href="/account/orders" className="hover:text-emerald-700 transition">
-            My Orders
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/account/orders/${order.id}`}
-            className="hover:text-emerald-700 transition"
-          >
-            {order.orderNumber}
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Open Dispute</span>
+        {/* Navigation Breadcrumbs & Back */}
+        <div className="space-y-3">
+          <BackButton
+            fallbackHref={`/account/orders/${order.id}`}
+            fallbackLabel={`Back to Order #${order.orderNumber}`}
+          />
+          <Breadcrumbs
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "My Orders", href: "/account/orders" },
+              { label: order.orderNumber, href: `/account/orders/${order.id}` },
+              { label: "Open Dispute" },
+            ]}
+          />
         </div>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm">

@@ -123,6 +123,21 @@ export function ProviderServiceForm({
     }
   };
 
+  const handleCancel = () => {
+    if (typeof window !== "undefined") {
+      const referrer = document.referrer;
+      const isInternal =
+        Boolean(referrer) &&
+        referrer.startsWith(window.location.origin) &&
+        referrer !== window.location.href;
+      if (isInternal && window.history.length > 1) {
+        router.back();
+        return;
+      }
+    }
+    router.push(onSuccessRedirect || "/services/provider");
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -372,7 +387,7 @@ export function ProviderServiceForm({
       <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleCancel}
           className="rounded-xl border border-neutral-300 bg-white px-5 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 min-h-[44px]"
         >
           Cancel

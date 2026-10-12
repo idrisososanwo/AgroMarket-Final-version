@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
+import { Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { formatNGN, NIGERIAN_STATES } from "@/features/marketplace/constants";
 import { createSharedPurchaseAction } from "../actions";
 import { SharedPurchaseType, AnimalPortionModel, AnimalPortionFraction } from "../types";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface FarmerSharedPurchaseFormProps {
   listings: Array<{
@@ -128,14 +129,18 @@ export function FarmerSharedPurchaseForm({ listings }: FarmerSharedPurchaseFormP
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-12">
-      <div>
-        <Link
-          href="/farmer/shared-purchases"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to My Pools
-        </Link>
+      <div className="space-y-3">
+        <BackButton
+          fallbackHref="/farmer/shared-purchases"
+          fallbackLabel="Back to Shared Pools"
+        />
+        <Breadcrumbs
+          items={[
+            { label: "Farmer Workspace", href: "/farmer" },
+            { label: "Shared Purchases", href: "/farmer/shared-purchases" },
+            { label: "Launch New Pool" },
+          ]}
+        />
         <h1 className="mt-2 text-2xl font-black text-foreground">Launch New Shared Purchase Pool</h1>
         <p className="text-xs text-muted-foreground">
           Offer bulk farm produce or whole animal shares to multiple pooled consumers.

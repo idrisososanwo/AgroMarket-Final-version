@@ -5,6 +5,7 @@ import { getOrderDetailsResult } from "@/features/orders/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { getOrderStatusBadge } from "@/features/orders/components/order-status-badge";
 import { OrderCancelButton } from "@/features/orders/components/order-cancel-button";
+import { BackButton, Breadcrumbs } from "@/components/ui";
 
 interface OrderDetailPageProps {
   params: Promise<{
@@ -62,20 +63,32 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
     redirect("/account/orders");
   }
 
+  const defaultBackHref = isSeller && !isBuyer ? "/farmer/orders" : "/account/orders";
+  const defaultBackLabel = isSeller && !isBuyer ? "Back to Incoming Orders" : "Back to My Orders";
+
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/account" className="hover:text-emerald-700 transition">
-            Account
-          </Link>
-          <span>/</span>
-          <Link href="/account/orders" className="hover:text-emerald-700 transition">
-            My Orders
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">{order.orderNumber}</span>
+        {/* Navigation Bar with BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref={defaultBackHref}
+            label={defaultBackLabel}
+          />
+          <Breadcrumbs
+            homeHref="/"
+            items={[
+              {
+                label: isSeller && !isBuyer ? "Farmer Workspace" : "Account",
+                href: isSeller && !isBuyer ? "/farmer" : "/account",
+              },
+              {
+                label: isSeller && !isBuyer ? "Incoming Orders" : "My Orders",
+                href: defaultBackHref,
+              },
+              { label: order.orderNumber },
+            ]}
+          />
         </div>
 
         {/* Order Header Card */}

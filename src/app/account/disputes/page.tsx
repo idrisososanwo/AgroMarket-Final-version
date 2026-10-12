@@ -4,6 +4,8 @@ import { getBuyerDisputes } from "@/features/disputes/queries";
 import { formatNGN } from "@/features/marketplace/constants";
 import { DisputeStatus } from "@/features/disputes/types";
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -58,13 +60,15 @@ export default async function BuyerDisputesPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/account" className="hover:text-emerald-700 transition">
-            Account
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Disputes & Claims</span>
+        {/* Navigation Breadcrumbs & Back */}
+        <div className="space-y-3">
+          <BackButton fallbackHref="/account" fallbackLabel="Back to Account" />
+          <Breadcrumbs
+            items={[
+              { label: "Account", href: "/account" },
+              { label: "Disputes & Claims" },
+            ]}
+          />
         </div>
 
         {/* Header */}

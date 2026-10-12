@@ -18,6 +18,10 @@ export function Breadcrumbs({
   homeHref = "/",
   className = "",
 }: BreadcrumbsProps) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
   return (
     <nav aria-label="Breadcrumb" className={`flex items-center text-xs text-neutral-500 ${className}`}>
       <ol className="flex items-center space-x-1.5 flex-wrap">

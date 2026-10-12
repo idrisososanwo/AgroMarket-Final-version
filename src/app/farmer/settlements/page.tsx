@@ -10,6 +10,8 @@ export const metadata = {
   title: "Settlements & Payouts | Farmer Workspace | AgroMarket",
 };
 
+import { BackButton, Breadcrumbs } from "@/components/ui";
+
 export function getSettlementStatusBadge(status: SettlementStatus) {
   switch (status) {
     case "PENDING":
@@ -67,13 +69,19 @@ export default async function FarmerSettlementsPage() {
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <Link href="/farmer" className="hover:text-emerald-700 transition">
-            Farmer Workspace
-          </Link>
-          <span>/</span>
-          <span className="text-neutral-800 font-semibold">Settlements & Payouts</span>
+        {/* Navigation Bar: BackButton & Breadcrumbs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BackButton
+            fallbackHref="/farmer"
+            label="Back to Farmer Workspace"
+          />
+          <Breadcrumbs
+            homeHref="/farmer"
+            items={[
+              { label: "Farmer Workspace", href: "/farmer" },
+              { label: "Settlements & Payouts" },
+            ]}
+          />
         </div>
 
         {/* Header */}
