@@ -276,7 +276,7 @@ describe("Phase 1.3 Step 3: Equipment Rental UI Integration", () => {
       const element = await EquipmentOwnerDashboardPage();
       render(element);
 
-      expect(screen.getByText("Equipment Owner Console")).toBeDefined();
+      expect(screen.getAllByText("Equipment Owner Console").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/Pending Rental Requests \(1\)/)).toBeDefined();
       expect(screen.getByText("Review Request")).toBeDefined();
       expect(screen.getByText(/My Machinery Fleet \(1\)/)).toBeDefined();

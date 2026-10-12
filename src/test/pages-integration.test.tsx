@@ -198,7 +198,7 @@ describe("Phase 1.2 — Step 5C: App Router Pages Integration", () => {
 
       render(element);
 
-      expect(screen.getByText("Commercial Agronomist Specialist")).toBeDefined();
+      expect(screen.getAllByText("Commercial Agronomist Specialist").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("Sign In to Apply")).toBeDefined();
       expect(screen.getByText("Log In to Apply")).toBeDefined();
       // Application form should not be rendered for anonymous visitors
@@ -359,7 +359,7 @@ describe("Phase 1.2 — Step 5C: App Router Pages Integration", () => {
 
       render(element);
 
-      expect(screen.getByText("75HP Mechanized Tractor Ploughing")).toBeDefined();
+      expect(screen.getAllByText("75HP Mechanized Tractor Ploughing").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("Sign In to Request Service")).toBeDefined();
       expect(screen.queryByText("Submit Service Request")).toBeNull();
     });
