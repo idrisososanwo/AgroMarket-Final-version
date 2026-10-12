@@ -91,6 +91,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
               listingId={listing.id}
               listingTitle={listing.title}
               variant="danger-card"
+              redirectOnSuccess="/farmer/listings"
             />
           </div>
         </div>

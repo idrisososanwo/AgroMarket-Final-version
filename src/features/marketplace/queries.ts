@@ -275,11 +275,12 @@ export async function getMarketplaceListings(
  * Retrieves a single listing by ID with full details, inventory status, and safe seller profile.
  */
 export async function getMarketplaceListingById(
-  listingId: string
+  listingId: string,
+  options?: { requireActive?: boolean }
 ): Promise<MarketplaceListing | null> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("listings")
     .select(
       `
@@ -320,8 +321,13 @@ export async function getMarketplaceListingById(
         )
       `
     )
-    .eq("id", listingId)
-    .maybeSingle();
+    .eq("id", listingId);
+
+  if (options?.requireActive) {
+    query = query.eq("status", "ACTIVE");
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
     return null;
@@ -345,7 +351,8 @@ export async function getMarketplaceListingById(
  * Retrieves all listings owned by a specific seller.
  */
 export async function getSellerListings(
-  sellerId?: string
+  sellerId?: string,
+  options?: { status?: string }
 ): Promise<MarketplaceListing[]> {
   const supabase = await createClient();
 
@@ -358,7 +365,7 @@ export async function getSellerListings(
     targetSellerId = user.id;
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("listings")
     .select(
       `
@@ -399,8 +406,13 @@ export async function getSellerListings(
         )
       `
     )
-    .eq("seller_id", targetSellerId)
-    .order("created_at", { ascending: false });
+    .eq("seller_id", targetSellerId);
+
+  if (options?.status && options.status !== "ALL") {
+    query = query.eq("status", options.status);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error || !data) {
     return [];

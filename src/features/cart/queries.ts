@@ -148,22 +148,25 @@ export async function getBuyerCart(userId?: string): Promise<BuyerCart | null> {
   const rawItems = (itemsData as unknown as RawCartItemRow[]) || [];
   const uniqueSellers = new Set<string>();
 
-  const items: CartItemDetail[] = rawItems
-    .filter((row) => row.listings !== null)
-    .map((row) => {
-      const listing = row.listings!;
-      const prod = listing.products;
-      const cat = prod?.categories;
-      const inv = Array.isArray(listing.inventory)
-        ? listing.inventory[0]
-        : listing.inventory;
-      const prof = listing.profiles;
+  // Only include items where listing exists and is actively listed
+  const activeRawItems = rawItems.filter(
+    (row) => row.listings !== null && row.listings.status === "ACTIVE"
+  );
 
-      const qty = Number(row.quantity);
-      const price = Number(listing.price_per_unit);
-      const subtotal = Math.round(price * qty * 100) / 100;
+  const items: CartItemDetail[] = activeRawItems.map((row) => {
+    const listing = row.listings!;
+    const prod = listing.products;
+    const cat = prod?.categories;
+    const inv = Array.isArray(listing.inventory)
+      ? listing.inventory[0]
+      : listing.inventory;
+    const prof = listing.profiles;
 
-      uniqueSellers.add(listing.seller_id);
+    const qty = Number(row.quantity);
+    const price = Number(listing.price_per_unit);
+    const subtotal = Math.round(price * qty * 100) / 100;
+
+    uniqueSellers.add(listing.seller_id);
 
       return {
         id: row.id,

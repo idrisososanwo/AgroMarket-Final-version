@@ -2,6 +2,8 @@ import * as React from "react";
 import { GlobalHeader } from "@/components/ui/global-header";
 import {
   HeroSection,
+  CategoryDiscovery,
+  MarketplaceShowcase,
   CapabilityStrip,
   ProblemSection,
   AgroNetworkDiagram,
@@ -22,41 +24,47 @@ export default function HomePage() {
       <GlobalHeader />
 
       <main className="flex-1 flex flex-col">
-        {/* 2. Hero Section: "Agricultural infrastructure / network" */}
+        {/* 2. Hero Section: Fresh produce search & primary headline */}
         <HeroSection />
 
-        {/* 3. Capability / Trust Strip */}
+        {/* 3. Category Discovery: Agricultural sectors & produce categories */}
+        <CategoryDiscovery />
+
+        {/* 4. Marketplace Showcase: Live farm-gate listings & How buying works */}
+        <MarketplaceShowcase />
+
+        {/* 5. Capability / Trust Strip */}
         <CapabilityStrip />
 
-        {/* 4. The Coordination Problem: Fragmented Agricultural Systems */}
+        {/* 6. The Coordination Problem: Fragmented Agricultural Systems */}
         <ProblemSection />
 
-        {/* 5. The Agro Network: Signature Ecosystem Map */}
+        {/* 7. The Agro Network: Signature Ecosystem Map */}
         <AgroNetworkDiagram />
 
-        {/* 6. Agricultural Value Chain Pipeline & Commodity Sectors */}
+        {/* 8. Agricultural Value Chain Pipeline & Commodity Sectors */}
         <ValueChainSection />
 
-        {/* 7. What People Can Do: Core Platform Capabilities */}
+        {/* 9. What People Can Do: Core Platform Capabilities */}
         <CapabilitiesSection />
 
-        {/* 8. Agricultural Intelligence & Decision Support */}
+        {/* 10. Agricultural Intelligence & Decision Support */}
         <IntelligenceSection />
 
-        {/* 9. Food Security & Strategic Resilience */}
+        {/* 11. Food Security & Strategic Resilience */}
         <FoodSecuritySection />
 
-        {/* 10. Nigeria-First Agricultural Realities */}
+        {/* 12. Nigeria-First Agricultural Realities */}
         <NigeriaFirstSection />
 
-        {/* 11. Audience Segments: Farmers & Businesses */}
+        {/* 13. Audience Segments: Farmers & Businesses */}
         <AudienceSections />
 
-        {/* 12. Final Call-To-Action: "Move Agriculture Forward" */}
+        {/* 14. Final Call-To-Action: "Move Agriculture Forward" */}
         <FinalCtaSection />
       </main>
 
-      {/* 13. Professional Global Footer */}
+      {/* 15. Professional Global Footer */}
       <Footer />
     </div>
   );

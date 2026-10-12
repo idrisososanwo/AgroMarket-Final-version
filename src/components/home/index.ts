@@ -1,5 +1,7 @@
 export * from "./network-hero-visual";
 export * from "./hero-section";
+export * from "./category-discovery";
+export * from "./marketplace-showcase";
 export * from "./capability-strip";
 export * from "./problem-section";
 export * from "./agro-network-diagram";

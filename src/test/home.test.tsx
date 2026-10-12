@@ -71,10 +71,10 @@ describe("AgroMarket Public Homepage", () => {
   it("renders the value chain pipeline and commodity sectors", () => {
     render(<HomePage />);
     expect(screen.getByText("Supporting the Entire Agricultural Journey")).toBeDefined();
-    expect(screen.getByText("Crops & Grains")).toBeDefined();
-    expect(screen.getByText("Roots & Tubers")).toBeDefined();
-    expect(screen.getByText("Livestock & Cattle")).toBeDefined();
-    expect(screen.getByText("Aquaculture & Fish")).toBeDefined();
+    expect(screen.getAllByText("Crops & Grains").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Roots & Tubers").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Livestock & Cattle").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Aquaculture & Fish").length).toBeGreaterThan(0);
   });
 
   it("renders platform capability links with verified routes", () => {

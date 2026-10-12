@@ -10,6 +10,7 @@ interface DeleteListingDialogProps {
   listingTitle: string;
   variant?: "table-action" | "danger-card";
   onSuccess?: () => void;
+  redirectOnSuccess?: string;
 }
 
 export function DeleteListingDialog({
@@ -17,6 +18,7 @@ export function DeleteListingDialog({
   listingTitle,
   variant = "table-action",
   onSuccess,
+  redirectOnSuccess,
 }: DeleteListingDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -43,12 +45,14 @@ export function DeleteListingDialog({
       // Brief delay so user sees feedback before dialog closes / refreshes
       setTimeout(() => {
         setIsOpen(false);
-        if (onSuccess) {
+        if (redirectOnSuccess) {
+          router.push(redirectOnSuccess);
+        } else if (onSuccess) {
           onSuccess();
         } else {
           router.refresh();
         }
-      }, 1200);
+      }, 1000);
     });
   };
 

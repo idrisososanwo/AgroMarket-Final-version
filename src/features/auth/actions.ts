@@ -91,6 +91,8 @@ export async function signUpAction(
     };
   }
 
+  const intendedRole = (formData.get("intendedRole") as string) || "BUYER";
+
   const baseUrl = getAppBaseUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -98,6 +100,9 @@ export async function signUpAction(
     password: parsed.data.password,
     options: {
       emailRedirectTo: `${baseUrl}/auth/callback?next=/auth/verify`,
+      data: {
+        intended_role: intendedRole,
+      },
     },
   });
 
@@ -156,8 +161,48 @@ export async function signInAction(
     };
   }
 
+  // Determine landing destination based on trusted database roles or safe return URL
+  let targetDestination = "/account";
+  const requestedNext = formData.get("next") as string | null;
+  if (
+    requestedNext &&
+    requestedNext.startsWith("/") &&
+    !requestedNext.startsWith("//") &&
+    !requestedNext.startsWith("/\\")
+  ) {
+    targetDestination = requestedNext;
+  } else {
+    const {
+      data: { user: signedInUser },
+    } = await supabase.auth.getUser();
+
+    if (signedInUser) {
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("role_code")
+        .eq("user_id", signedInUser.id);
+
+      const roles = (rolesData?.map((r) => r.role_code) || []) as string[];
+
+      // Explicit role-based landing precedence:
+      // 1. FARMER -> /farmer (producer workspace)
+      // 2. EQUIPMENT_OWNER -> /equipment/owner
+      // 3. BUSINESS -> /business
+      // 4. BUYER / others -> /account?role=BUYER (customer shopping hub)
+      if (roles.includes("FARMER")) {
+        targetDestination = "/farmer";
+      } else if (roles.includes("EQUIPMENT_OWNER")) {
+        targetDestination = "/equipment/owner";
+      } else if (roles.includes("BUSINESS")) {
+        targetDestination = "/business";
+      } else {
+        targetDestination = "/account?role=BUYER";
+      }
+    }
+  }
+
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect(targetDestination);
 }
 
 export async function signOutAction(): Promise<void> {

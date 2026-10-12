@@ -14,9 +14,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ListingDetailPage({ params }: ListingDetailPageProps) {
   const { listingId } = await params;
-  const listing = await getMarketplaceListingById(listingId);
+  const listing = await getMarketplaceListingById(listingId, { requireActive: true });
 
-  if (!listing || listing.status === "ARCHIVED") {
+  if (!listing || listing.status !== "ACTIVE") {
     notFound();
   }
 

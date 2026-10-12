@@ -444,20 +444,23 @@ export async function deleteListingAction(
       console.error("Error checking order items for listing deletion:", orderErr);
     }
 
-    // 3. Check for disputes referencing this listing
-    const { count: disputesCount, error: disputeErr } = await supabase
-      .from("disputes")
+    // 3. Check for shared purchases referencing this listing
+    const { count: sharedPurchasesCount, error: sharedErr } = await supabase
+      .from("shared_purchases")
       .select("id", { count: "exact", head: true })
       .eq("listing_id", listingId);
 
-    if (disputeErr) {
-      console.error("Error checking disputes for listing deletion:", disputeErr);
+    if (sharedErr) {
+      console.error("Error checking shared purchases for listing deletion:", sharedErr);
     }
 
     const hasAssociatedOrders = orderItemsCount !== null && orderItemsCount > 0;
-    const hasAssociatedDisputes = disputesCount !== null && disputesCount > 0;
+    const hasAssociatedShared = sharedPurchasesCount !== null && sharedPurchasesCount > 0;
 
-    if (hasAssociatedOrders || hasAssociatedDisputes) {
+    // Remove any unpurchased cart items for this listing so buyers don't have dangling references
+    await supabase.from("cart_items").delete().eq("listing_id", listingId);
+
+    if (hasAssociatedOrders || hasAssociatedShared) {
       // Historical references exist: Archive listing to preserve receipt & payment records
       const { error: archiveErr } = await supabase
         .from("listings")
@@ -482,9 +485,14 @@ export async function deleteListingAction(
         })
         .eq("listing_id", listingId);
 
+      revalidatePath("/");
       revalidatePath("/marketplace");
-      revalidatePath("/farmer/listings");
       revalidatePath(`/marketplace/${listingId}`);
+      revalidatePath("/farmer");
+      revalidatePath("/farmer/listings");
+      revalidatePath(`/farmer/listings/${listingId}/edit`);
+      revalidatePath("/account");
+      revalidatePath("/cart");
 
       const message =
         "Listing has historical orders and was safely archived. It is delisted from the marketplace while preserving customer receipts.";
@@ -496,7 +504,7 @@ export async function deleteListingAction(
       };
     }
 
-    // No historical orders or disputes: Hard delete is completely safe
+    // No historical orders or shared purchases: Hard delete is completely safe
     const { error: deleteErr } = await supabase
       .from("listings")
       .delete()
@@ -508,9 +516,14 @@ export async function deleteListingAction(
       return { success: false, error: deleteErr.message || "Failed to delete listing." };
     }
 
+    revalidatePath("/");
     revalidatePath("/marketplace");
-    revalidatePath("/farmer/listings");
     revalidatePath(`/marketplace/${listingId}`);
+    revalidatePath("/farmer");
+    revalidatePath("/farmer/listings");
+    revalidatePath(`/farmer/listings/${listingId}/edit`);
+    revalidatePath("/account");
+    revalidatePath("/cart");
 
     const message = "Produce listing deleted successfully.";
 

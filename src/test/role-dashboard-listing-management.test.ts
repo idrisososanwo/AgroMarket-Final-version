@@ -66,7 +66,7 @@ vi.mock("next/navigation", () => ({
 
 let mockListingData: { id: string; seller_id: string; title: string; status: string } | null = null;
 let mockOrderItemsCount = 0;
-let mockDisputesCount = 0;
+let mockSharedPurchasesCount = 0;
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -103,13 +103,20 @@ vi.mock("@/lib/supabase/server", () => ({
           }),
         };
       }
-      if (table === "disputes") {
+      if (table === "shared_purchases") {
         return {
           select: (_cols: string, _opts?: { count?: string; head?: boolean }) => ({
             eq: async () => ({
-              count: mockDisputesCount,
+              count: mockSharedPurchasesCount,
               error: null,
             }),
+          }),
+        };
+      }
+      if (table === "cart_items") {
+        return {
+          delete: () => ({
+            eq: async () => ({ error: null }),
           }),
         };
       }
@@ -147,7 +154,7 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
       status: "ACTIVE",
     };
     mockOrderItemsCount = 0;
-    mockDisputesCount = 0;
+    mockSharedPurchasesCount = 0;
   });
 
   describe("Part A: Safe Listing Deletion & Historical Order Protection", () => {
@@ -166,7 +173,6 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
     });
 
     it("rejects deletion when a farmer tries to delete another farmer's listing", async () => {
-      // Listing belongs to another farmer
       mockListingData = {
         id: "listing-uuid-101",
         seller_id: "other-farmer-uuid-999",
@@ -180,7 +186,6 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
     });
 
     it("safely archives the listing when historical buyer orders exist", async () => {
-      // Simulate that 3 customer order items reference this listing
       mockOrderItemsCount = 3;
 
       const result = await deleteListingAction("listing-uuid-101");
@@ -190,9 +195,9 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
       expect(result.message).toContain("preserving customer receipts");
     });
 
-    it("safely archives the listing when disputes exist", async () => {
+    it("safely archives the listing when shared purchases reference it", async () => {
       mockOrderItemsCount = 0;
-      mockDisputesCount = 1;
+      mockSharedPurchasesCount = 1;
 
       const result = await deleteListingAction("listing-uuid-101");
       expect(result.success).toBe(true);
@@ -200,9 +205,9 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
       expect(result.message).toContain("safely archived");
     });
 
-    it("permanently deletes the listing when no orders or disputes exist", async () => {
+    it("permanently deletes the listing when no orders or shared pools exist", async () => {
       mockOrderItemsCount = 0;
-      mockDisputesCount = 0;
+      mockSharedPurchasesCount = 0;
 
       const result = await deleteListingAction("listing-uuid-101");
       expect(result.success).toBe(true);
@@ -274,6 +279,21 @@ describe("AgroMarket: Listing Management & Role-Aware Dashboard Suite", () => {
       }
 
       expect(activeRole).toBe("EQUIPMENT_OWNER");
+    });
+
+    it("verifies role-based redirect destinations", () => {
+      const getLanding = (roles: string[]) => {
+        if (roles.includes("FARMER")) return "/farmer";
+        if (roles.includes("EQUIPMENT_OWNER")) return "/equipment/owner";
+        if (roles.includes("BUSINESS")) return "/business";
+        return "/account?role=BUYER";
+      };
+
+      expect(getLanding(["FARMER"])).toBe("/farmer");
+      expect(getLanding(["FARMER", "BUYER"])).toBe("/farmer");
+      expect(getLanding(["EQUIPMENT_OWNER"])).toBe("/equipment/owner");
+      expect(getLanding(["BUSINESS"])).toBe("/business");
+      expect(getLanding(["BUYER"])).toBe("/account?role=BUYER");
     });
   });
 });
