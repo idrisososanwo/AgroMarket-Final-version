@@ -33,14 +33,17 @@ async function handleScheduledCleanup(req: NextRequest) {
   const url = new URL(req.url);
   const rawTimeout = url.searchParams.get("timeoutMinutes");
   const rawLimit = url.searchParams.get("limit");
+  const rawDryRun = url.searchParams.get("dryRun");
 
   const timeoutMinutes = rawTimeout ? Math.max(15, Math.min(1440, parseInt(rawTimeout, 10))) : 60;
   const limit = rawLimit ? Math.max(1, Math.min(100, parseInt(rawLimit, 10))) : 50;
+  const dryRun = rawDryRun === "true" || rawDryRun === "1";
 
   try {
     const result = await OrderCleanupService.cleanupAbandonedOrders({
       timeoutMinutes,
       limit,
+      dryRun,
     });
 
     return NextResponse.json({

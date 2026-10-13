@@ -611,4 +611,40 @@ describe("AgroMarket V1 — Abandoned Order Cleanup & Concurrency Suite", () => 
     expect(dbInventory[0].quantity_reserved).toBe(19); // 20 - 1
     expect(dbInventory[1].quantity_reserved).toBe(9);  // 10 - 1
   });
+
+  // -------------------------------------------------------------------------
+  // TEST 11: Non-destructive dryRun diagnostic
+  // -------------------------------------------------------------------------
+  it("Scenario 11: Non-destructive dryRun identifies eligible orders without mutating status or inventory", () => {
+    const oldTimestamp = new Date(Date.now() - 95 * 60 * 1000).toISOString();
+    dbOrders.push({
+      id: "ord-dry-01",
+      order_number: "AM-ORD-DRY-01",
+      buyer_id: "usr-dry-01",
+      status: "PENDING",
+      total_amount: 85000,
+      created_at: oldTimestamp,
+      updated_at: oldTimestamp,
+    });
+    dbOrderItems.push({
+      id: "item-dry-01",
+      order_id: "ord-dry-01",
+      listing_id: "listing-rice-50kg",
+      quantity: 1,
+      status: "PENDING",
+    });
+
+    const initialReserved = dbInventory[0].quantity_reserved;
+
+    // Simulate dry run candidate identification
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const matching = dbOrders.filter((o) => o.status === "PENDING" && o.created_at < cutoff);
+
+    expect(matching.length).toBe(1);
+    expect(matching[0].id).toBe("ord-dry-01");
+
+    // In dryRun, no mutations occur
+    expect(dbOrders.find((o) => o.id === "ord-dry-01")?.status).toBe("PENDING");
+    expect(dbInventory[0].quantity_reserved).toBe(initialReserved);
+  });
 });

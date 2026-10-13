@@ -16,12 +16,15 @@ import { recordAuditLog } from "@/lib/audit";
 
 export interface CleanupResult {
   success: boolean;
+  dryRun?: boolean;
   processedCount: number;
   cancelledCount: number;
+  eligibleCount?: number;
   skippedCount: number;
   timeoutMinutes: number;
   details: Array<{
     orderId: string;
+    orderNumber?: string;
     success: boolean;
     code: string;
     reason?: string;
@@ -42,14 +45,22 @@ export interface ReleaseOrderResult {
 export class OrderCleanupService {
   /**
    * Cleans up all pending orders that have been abandoned past the timeout window (default: 60 minutes).
+   * Supports non-destructive dry-run diagnostic mode.
    */
   static async cleanupAbandonedOrders(options: {
     timeoutMinutes?: number;
     limit?: number;
+    dryRun?: boolean;
   } = {}): Promise<CleanupResult> {
     const timeoutMinutes = options.timeoutMinutes ?? 60;
     const limit = options.limit ?? 50;
+    const dryRun = Boolean(options.dryRun);
     const admin = createAdminClient();
+
+    // If dryRun is requested, perform non-destructive candidate identification
+    if (dryRun) {
+      return this.performDryRunDiagnostic(timeoutMinutes, limit);
+    }
 
     // 1. Attempt execution via the atomic PostgreSQL stored procedure first
     const { data: rpcData, error: rpcError } = await admin.rpc(
@@ -71,6 +82,7 @@ export class OrderCleanupService {
 
       const mappedDetails = (rpcResult.details || []).map((d) => ({
         orderId: String(d.order_id || ""),
+        orderNumber: d.order_number ? String(d.order_number) : undefined,
         success: Boolean(d.success),
         code: String(d.code || ""),
         reason: d.reason ? String(d.reason) : undefined,
@@ -78,6 +90,7 @@ export class OrderCleanupService {
 
       return {
         success: true,
+        dryRun: false,
         processedCount: rpcResult.processed_count ?? 0,
         cancelledCount: rpcResult.cancelled_count ?? 0,
         skippedCount: rpcResult.skipped_count ?? 0,
@@ -88,6 +101,85 @@ export class OrderCleanupService {
 
     // 2. Application-Level Graceful Fallback if RPC is not present
     return this.cleanupAbandonedOrdersApplicationLevel(timeoutMinutes, limit);
+  }
+
+  /**
+   * Non-destructive dry-run: identifies eligible orders without mutating data or releasing inventory.
+   */
+  private static async performDryRunDiagnostic(
+    timeoutMinutes: number,
+    limit: number
+  ): Promise<CleanupResult> {
+    const admin = createAdminClient();
+    const cutoffDate = new Date(Date.now() - timeoutMinutes * 60 * 1000).toISOString();
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+    const { data: orders, error } = await admin
+      .from("orders")
+      .select("id, order_number, created_at, status, total_amount")
+      .eq("status", "PENDING")
+      .lt("created_at", cutoffDate)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+
+    if (error || !orders) {
+      return {
+        success: false,
+        dryRun: true,
+        processedCount: 0,
+        cancelledCount: 0,
+        skippedCount: 0,
+        timeoutMinutes,
+        details: [],
+      };
+    }
+
+    const eligibleDetails: CleanupResult["details"] = [];
+    let skippedCount = 0;
+
+    for (const order of orders) {
+      const { data: payments } = await admin
+        .from("payments")
+        .select("id, status, updated_at")
+        .eq("order_id", order.id);
+
+      const hasPaid = (payments || []).some((p) => p.status === "SUCCESSFUL");
+      const hasInFlight = (payments || []).some(
+        (p) => ["INITIALIZED", "PENDING"].includes(p.status) && p.updated_at > fifteenMinutesAgo
+      );
+
+      if (hasPaid || hasInFlight) {
+        skippedCount++;
+        eligibleDetails.push({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          success: false,
+          code: hasPaid ? "PAYMENT_SUCCESSFUL" : "PAYMENT_IN_FLIGHT",
+          reason: hasPaid ? "Order payment verified" : "Payment active in flight",
+        });
+      } else {
+        eligibleDetails.push({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          success: true,
+          code: "ELIGIBLE_FOR_CLEANUP",
+          reason: "Order abandoned and unpaid past timeout threshold",
+        });
+      }
+    }
+
+    const eligibleCount = eligibleDetails.filter((d) => d.code === "ELIGIBLE_FOR_CLEANUP").length;
+
+    return {
+      success: true,
+      dryRun: true,
+      processedCount: orders.length,
+      cancelledCount: 0,
+      eligibleCount,
+      skippedCount,
+      timeoutMinutes,
+      details: eligibleDetails,
+    };
   }
 
   /**
@@ -284,7 +376,8 @@ export class OrderCleanupService {
     }
 
     // 5. Conditional transition to CANCELLED
-    const { error: updateOrderErr } = await admin
+    let updateOrderErr = null;
+    const { error: primaryErr } = await admin
       .from("orders")
       .update({
         status: "CANCELLED",
@@ -293,6 +386,21 @@ export class OrderCleanupService {
       })
       .eq("id", orderId)
       .eq("status", "PENDING"); // Conditional update to prevent race conditions
+
+    if (primaryErr && (primaryErr.code === "42703" || primaryErr.message?.includes("cancellation_reason"))) {
+      // Column cancellation_reason pending migration application; fallback to standard update
+      const { error: fallbackErr } = await admin
+        .from("orders")
+        .update({
+          status: "CANCELLED",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+        .eq("status", "PENDING");
+      updateOrderErr = fallbackErr;
+    } else {
+      updateOrderErr = primaryErr;
+    }
 
     if (updateOrderErr) {
       console.error("OrderCleanupService: Failed to cancel order:", updateOrderErr);
