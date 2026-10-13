@@ -496,6 +496,7 @@ export async function getQueueMetrics(
     EXPIRE_STALE_ALERTS: 0,
     REFRESH_MARKET_INTELLIGENCE: 0,
     RECONCILE_SUPPLY_FULFILMENT: 0,
+    CLEANUP_ABANDONED_ORDERS: 0,
   };
 
   let expiredLeasesCount = 0;

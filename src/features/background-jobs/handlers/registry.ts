@@ -9,6 +9,7 @@ import { RetryNotificationDeliveryHandler } from "./retry-notification-delivery"
 import { ExpireStaleAlertsHandler } from "./expire-stale-alerts";
 import { RefreshMarketIntelligenceHandler } from "./refresh-market-intelligence";
 import { ReconcileSupplyFulfilmentHandler } from "./reconcile-supply-fulfilment";
+import { CleanupAbandonedOrdersHandler } from "./cleanup-abandoned-orders";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handlerRegistry: Map<JobType, JobHandler<any, any>> = new Map();
@@ -19,6 +20,7 @@ handlerRegistry.set("RETRY_NOTIFICATION_DELIVERY", new RetryNotificationDelivery
 handlerRegistry.set("EXPIRE_STALE_ALERTS", new ExpireStaleAlertsHandler());
 handlerRegistry.set("REFRESH_MARKET_INTELLIGENCE", new RefreshMarketIntelligenceHandler());
 handlerRegistry.set("RECONCILE_SUPPLY_FULFILMENT", new ReconcileSupplyFulfilmentHandler());
+handlerRegistry.set("CLEANUP_ABANDONED_ORDERS", new CleanupAbandonedOrdersHandler());
 
 /**
  * Retrieves the registered execution handler for a job type.
@@ -44,4 +46,5 @@ export function resetJobHandlerRegistry(): void {
   handlerRegistry.set("EXPIRE_STALE_ALERTS", new ExpireStaleAlertsHandler());
   handlerRegistry.set("REFRESH_MARKET_INTELLIGENCE", new RefreshMarketIntelligenceHandler());
   handlerRegistry.set("RECONCILE_SUPPLY_FULFILMENT", new ReconcileSupplyFulfilmentHandler());
+  handlerRegistry.set("CLEANUP_ABANDONED_ORDERS", new CleanupAbandonedOrdersHandler());
 }

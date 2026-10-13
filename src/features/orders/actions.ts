@@ -9,6 +9,7 @@ import {
   createOrderSchema,
   transitionOrderStatusSchema,
 } from "./validation";
+import { OrderCleanupService } from "./cleanup";
 
 /**
  * Creates an order atomically from the buyer's active cart.
@@ -158,42 +159,26 @@ export async function transitionOrderStatusAction(
       };
     }
 
-    // 3. Update order status
-    const { error: updateErr } = await supabase
-      .from("orders")
-      .update({
-        status: targetStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
-
-    if (updateErr) {
-      return { success: false, error: updateErr.message || "Failed to update order status." };
-    }
-
-    // 4. If order was cancelled from PENDING, release reserved inventory
+    // 3. Update order status or perform atomic cancellation with inventory release
     if (targetStatus === "CANCELLED" && currentStatus === "PENDING") {
-      const { data: allItems } = await supabase
-        .from("order_items")
-        .select("listing_id, quantity")
-        .eq("order_id", orderId);
+      const releaseResult = await OrderCleanupService.releaseSingleOrder(
+        orderId,
+        isAdmin ? "ADMIN_CANCELLED" : "BUYER_CANCELLED"
+      );
+      if (!releaseResult.success) {
+        return { success: false, error: releaseResult.message || "Failed to cancel order." };
+      }
+    } else {
+      const { error: updateErr } = await supabase
+        .from("orders")
+        .update({
+          status: targetStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
 
-      if (allItems) {
-        for (const item of allItems) {
-          const { data: inv } = await supabase
-            .from("inventory")
-            .select("quantity_reserved")
-            .eq("listing_id", item.listing_id)
-            .single();
-
-          if (inv) {
-            const newReserved = Math.max(0, Number(inv.quantity_reserved) - Number(item.quantity));
-            await supabase
-              .from("inventory")
-              .update({ quantity_reserved: newReserved })
-              .eq("listing_id", item.listing_id);
-          }
-        }
+      if (updateErr) {
+        return { success: false, error: updateErr.message || "Failed to update order status." };
       }
     }
 
