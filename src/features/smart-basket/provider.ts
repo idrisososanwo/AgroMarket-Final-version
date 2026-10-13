@@ -174,16 +174,28 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
       }
 
       // Factor 2: Regional Proximity & Location (Max 25 pts)
-      if (c.state.toLowerCase() === targetState.toLowerCase()) {
+      const cState = (c.state || "").trim();
+      const targetStateTrim = (targetState || "").trim();
+      const cLga = (c.lga || "").trim();
+      const targetLgaTrim = (targetLga || "").trim();
+
+      if (cState && cState.toLowerCase() === targetStateTrim.toLowerCase()) {
         score += 20;
-        if (targetLga && c.lga && c.lga.toLowerCase() === targetLga.toLowerCase()) {
+        if (targetLgaTrim && cLga && cLga.toLowerCase() === targetLgaTrim.toLowerCase()) {
           score += 5;
-          explanations.push(`Directly available in your local LGA (${c.lga}, ${c.state}).`);
+          explanations.push(`Directly available in your local LGA (${cLga}, ${cState}).`);
+        } else if (targetLgaTrim && cLga && cLga.toLowerCase() !== targetLgaTrim.toLowerCase()) {
+          explanations.push(`Regional fallback: Sourced from ${cState} (${cLga}) outside your local LGA (${targetLgaTrim}).`);
         } else {
-          explanations.push(`Locally produced and stocked in ${c.state} to minimize transit delay.`);
+          explanations.push(`Locally produced and stocked in ${cState} to minimize transit delay.`);
         }
-      } else {
+      } else if (cState) {
         score += 5;
+        explanations.push(
+          `Sourced from ${cState}${cLga ? ` (${cLga})` : ""} outside your primary location (${targetStateTrim}) to fulfill staple availability.`
+        );
+      } else {
+        score += 2;
       }
 
       // Factor 3: Price Suitability & Market Value (Max 20 pts)
@@ -352,13 +364,21 @@ export class DeterministicRecommendationProvider implements RecommendationProvid
 
     let rationale = `Balanced produce basket generated for a ${householdSize}-person household in ${targetState}. `;
     if (selectedItems.length > 0) {
+      const outsideRegionItems = selectedItems.filter(
+        (i) => (i.state || "").trim().toLowerCase() !== (targetState || "").trim().toLowerCase()
+      );
       rationale += `Includes ${selectedItems.length} staple item(s) across ${categoriesRepresented.length} category standard(s) optimized for freshness and budget efficiency.`;
+      if (outsideRegionItems.length > 0) {
+        rationale += ` (${outsideRegionItems.length} item(s) sourced via regional fallback outside ${targetState} to satisfy staple availability.)`;
+      }
       if (isFirstTimeCustomer) {
         rationale += ` (First-time customer basket: recommendations will further adapt as you order on AgroMarket.)`;
       }
     } else {
       if (candidates.length === 0) {
-        rationale = `Currently, no active marketplace listings match your regional location (${targetState}) or available stock criteria. Try expanding your search location or check back soon.`;
+        rationale = `Currently, no active marketplace listings with available stock match your regional location (${targetState}) or available stock criteria. Try expanding your search location or check back soon as producers update their harvests.`;
+      } else if (eligibleCandidates.length === 0) {
+        rationale = `No active produce listings matched your dietary, allergy, or exclusion preferences. Please review your dietary preferences.`;
       } else {
         rationale = `No complete produce bundle could be created within your stated budget of ${formatNGN(targetBudget)}. Please increase your budget or adjust minimum order quantities.`;
       }

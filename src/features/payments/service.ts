@@ -346,6 +346,14 @@ export class PaymentService {
         } catch (spErr) {
           console.warn("Shared purchase participant sync deferred/skipped:", spErr);
         }
+
+        // Auto-provision logistics delivery consignment(s)
+        try {
+          const { LogisticsService } = await import("@/features/logistics/service");
+          await LogisticsService.createOrderDeliveries(order.id, payment.buyer_id);
+        } catch (logisticsErr) {
+          console.warn("Logistics delivery auto-creation deferred/skipped:", logisticsErr);
+        }
       }
 
       // Record Audit Logs

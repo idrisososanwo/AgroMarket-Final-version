@@ -136,9 +136,9 @@ export class SmartBasketRecommendationEngine {
         unit: r.unit,
         minimumOrderQuantity: moq,
         quantityAvailable: qtyAvailable,
-        state: r.state,
-        lga: r.lga,
-        pickupAddress: r.pickup_address,
+        state: r.state?.trim() || "Unknown",
+        lga: r.lga?.trim() || null,
+        pickupAddress: r.pickup_address?.trim() || "",
         imageUrl,
       });
     }
