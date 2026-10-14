@@ -4,16 +4,16 @@ on:
   schedule:
     # Trigger every 15 minutes
     # Note: GitHub Actions schedule runs with best-effort queuing and may occasionally experience slight delays
-    - cron: '*/15 * * * *'
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Perform a non-destructive dry run (read-only candidate diagnostic)'
+        description: "Perform a non-destructive dry run (read-only candidate diagnostic)"
         required: true
         type: boolean
         default: false
       timeout_minutes:
-        description: 'Order timeout cutoff in minutes'
+        description: "Order timeout cutoff in minutes"
         required: false
         type: number
         default: 60
@@ -32,34 +32,74 @@ jobs:
       - name: Invoke Production Endpoint
         env:
           ENDPOINT_BASE: "https://agro-market-final-version-6hzc.vercel.app/api/cron/cleanup-abandoned-orders"
-          CRON_TOKEN: ${{ secrets.CRON_SECRET || secrets.SCHEDULER_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SCHEDULER_SECRET: ${{ secrets.SCHEDULER_SECRET }}
           INPUT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           INPUT_TIMEOUT: ${{ github.event.inputs.timeout_minutes || '60' }}
         run: |
+          # Resolve bearer token with fallback from CRON_SECRET to SCHEDULER_SECRET
+          CRON_TOKEN="${CRON_SECRET:-$SCHEDULER_SECRET}"
+
+          # Add mask to GitHub Actions runner as an extra security layer
+          if [ -n "$CRON_TOKEN" ]; then
+            echo "::add-mask::$CRON_TOKEN"
+          fi
+
           if [ -z "$CRON_TOKEN" ]; then
-            echo "::error::CRON_SECRET or SCHEDULER_SECRET is not configured in GitHub Repository Secrets."
+            echo "::error::Neither CRON_SECRET nor SCHEDULER_SECRET is configured in GitHub Repository Secrets."
+            echo "::error::Authentication is required to protect the production cleanup endpoint."
+            echo "Remediation: In GitHub, navigate to Repository Settings -> Secrets and variables -> Actions, and add CRON_SECRET (or SCHEDULER_SECRET) matching the secret configured in your Vercel Project Environment Variables."
             exit 1
           fi
 
-          TARGET_URL="${ENDPOINT_BASE}?timeoutMinutes=${INPUT_TIMEOUT}&dryRun=${INPUT_DRY_RUN}"
-          echo "Invoking scheduled cleanup worker (dryRun: ${INPUT_DRY_RUN}, timeoutMinutes: ${INPUT_TIMEOUT})..."
+          # Sanitize inputs
+          DRY_RUN_VAL="false"
+          if [ "$INPUT_DRY_RUN" = "true" ] || [ "$INPUT_DRY_RUN" = "1" ]; then
+            DRY_RUN_VAL="true"
+          fi
+
+          TIMEOUT_VAL="${INPUT_TIMEOUT:-60}"
+          if ! echo "$TIMEOUT_VAL" | grep -qE '^[0-9]+$'; then
+            echo "::warning::Invalid timeoutMinutes input '${TIMEOUT_VAL}'; defaulting to 60"
+            TIMEOUT_VAL="60"
+          fi
+
+          TARGET_URL="${ENDPOINT_BASE}?timeoutMinutes=${TIMEOUT_VAL}&dryRun=${DRY_RUN_VAL}"
+          echo "Invoking scheduled cleanup worker (dryRun: ${DRY_RUN_VAL}, timeoutMinutes: ${TIMEOUT_VAL})..."
 
           # Execute request with strict 30-second timeout.
           # The bearer token is passed strictly in HTTP header; headers are never echoed to workflow output.
+          CURL_EXIT=0
           HTTP_RESPONSE=$(curl -s -S --max-time 30 \
             -X POST \
             -H "Authorization: Bearer ${CRON_TOKEN}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
-            "${TARGET_URL}")
+            "${TARGET_URL}") || CURL_EXIT=$?
+
+          if [ $CURL_EXIT -ne 0 ]; then
+            echo "::error::curl network request failed with exit code ${CURL_EXIT}"
+            echo "Raw curl output: ${HTTP_RESPONSE}"
+            exit 1
+          fi
 
           HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
-          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1 | tr -d '\r\n[:space:]')
 
           echo "Response HTTP Status: ${HTTP_STATUS}"
           echo "Response Payload: ${HTTP_BODY}"
 
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "::error::Endpoint failed with HTTP status ${HTTP_STATUS}"
+          if [ -z "$HTTP_STATUS" ] || [ "$HTTP_STATUS" != "200" ]; then
+            echo "::error::Endpoint invocation failed or returned non-200 HTTP status (Status: '${HTTP_STATUS:-EMPTY}')"
             exit 1
+          fi
+
+          # Verify application-level success in JSON response if jq is available
+          if command -v jq >/dev/null 2>&1; then
+            SUCCESS_FIELD=$(echo "$HTTP_BODY" | jq -r '.success // empty' 2>/dev/null || true)
+            if [ "$SUCCESS_FIELD" = "false" ]; then
+              ERROR_MSG=$(echo "$HTTP_BODY" | jq -r '.error // "Unknown execution error"' 2>/dev/null || true)
+              echo "::error::Endpoint returned HTTP 200 but payload reported failure: ${ERROR_MSG}"
+              exit 1
+            fi
           fi
