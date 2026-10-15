@@ -11,7 +11,7 @@ on:
         description: "Perform a non-destructive dry run (read-only candidate diagnostic)"
         required: true
         type: boolean
-        default: false
+        default: true
       timeout_minutes:
         description: "Order timeout cutoff in minutes"
         required: false
@@ -34,10 +34,11 @@ jobs:
           ENDPOINT_BASE: "https://agro-market-final-version-6hzc.vercel.app/api/cron/cleanup-abandoned-orders"
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SCHEDULER_SECRET: ${{ secrets.SCHEDULER_SECRET }}
-          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
           INPUT_TIMEOUT: ${{ github.event.inputs.timeout_minutes || '60' }}
         run: |
-          # Resolve bearer token with fallback from CRON_SECRET to SCHEDULER_SECRET
+          # 1. Resolve bearer token with fallback from CRON_SECRET to SCHEDULER_SECRET
           CRON_TOKEN="${CRON_SECRET:-$SCHEDULER_SECRET}"
 
           # Add mask to GitHub Actions runner as an extra security layer
@@ -52,12 +53,28 @@ jobs:
             exit 1
           fi
 
-          # Sanitize inputs
-          DRY_RUN_VAL="false"
-          if [ "$INPUT_DRY_RUN" = "true" ] || [ "$INPUT_DRY_RUN" = "1" ]; then
-            DRY_RUN_VAL="true"
+          # 2. Validate event name and determine dryRun mode
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # Manual execution: default to safe dry-run (true).
+            # Only execute live cleanup if explicitly passed 'false'.
+            if [ -z "$INPUT_DRY_RUN" ] || [ "$INPUT_DRY_RUN" = "true" ]; then
+              DRY_RUN_VAL="true"
+            elif [ "$INPUT_DRY_RUN" = "false" ]; then
+              DRY_RUN_VAL="false"
+            else
+              echo "::error::Invalid dry_run input '${INPUT_DRY_RUN}'. Must be 'true' or 'false'. Failing closed."
+              exit 1
+            fi
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            # Automated cron schedule: execute live cleanup
+            DRY_RUN_VAL="false"
+          else
+            # Fail closed on any unexpected or unsupported event triggers
+            echo "::error::Unsupported workflow event '${EVENT_NAME}'. Failing closed to protect production data."
+            exit 1
           fi
 
+          # 3. Sanitize timeoutMinutes input
           TIMEOUT_VAL="${INPUT_TIMEOUT:-60}"
           if ! echo "$TIMEOUT_VAL" | grep -qE '^[0-9]+$'; then
             echo "::warning::Invalid timeoutMinutes input '${TIMEOUT_VAL}'; defaulting to 60"
@@ -65,7 +82,7 @@ jobs:
           fi
 
           TARGET_URL="${ENDPOINT_BASE}?timeoutMinutes=${TIMEOUT_VAL}&dryRun=${DRY_RUN_VAL}"
-          echo "Invoking scheduled cleanup worker (dryRun: ${DRY_RUN_VAL}, timeoutMinutes: ${TIMEOUT_VAL})..."
+          echo "Invoking cleanup worker (event: ${EVENT_NAME}, dryRun: ${DRY_RUN_VAL}, timeoutMinutes: ${TIMEOUT_VAL})..."
 
           # Execute request with strict 30-second timeout.
           # The bearer token is passed strictly in HTTP header; headers are never echoed to workflow output.
