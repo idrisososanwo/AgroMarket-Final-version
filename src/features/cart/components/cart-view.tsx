@@ -378,21 +378,68 @@ export function CartView({ cart, userProfile }: CartViewProps) {
             </div>
           </div>
 
-          {/* Order Summary Pricing */}
-          <div className="pt-4 border-t border-neutral-100 space-y-2.5 text-xs text-neutral-600">
-            <div className="flex justify-between">
-              <span>Produce Subtotal ({cart.itemCount} {cart.itemCount === 1 ? "item" : "items"})</span>
-              <span className="font-semibold text-neutral-900">{formatNGN(cart.subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Estimated Delivery Fee</span>
-              <span className="font-semibold text-emerald-700">Calculated upon dispatch</span>
-            </div>
-            <div className="flex justify-between pt-2 border-t border-neutral-100 text-sm font-black text-neutral-900">
-              <span>Order Total</span>
-              <span className="text-lg text-emerald-700">{formatNGN(cart.total)}</span>
-            </div>
-          </div>
+          {/* Order Summary Pricing with Transparent Corridor Logistics Breakdown */}
+          {(() => {
+            const northernStates = ["kano", "kaduna", "jigawa", "katsina", "sokoto", "kebbi", "zamfara", "plateau", "benue", "borno", "taraba", "bauchi", "gombe", "yobe", "adamawa", "nasarawa", "niger"];
+            const southernStates = ["lagos", "ogun", "oyo", "osun", "ondo", "ekiti", "rivers", "delta", "edo", "anambra", "enugu", "imo", "abia", "ebonyi", "cross river", "akwa ibom", "bayelsa"];
+
+            const dState = deliveryState.trim().toLowerCase();
+            let estimatedDelivery = 2500;
+            let corridorName = "Intra-State Hub Dispatch";
+            let corridorNote = "Local doorstep transit within state";
+
+            if (cart.items.length > 0) {
+              const originState = cart.items[0].sellerState?.trim().toLowerCase() || dState;
+              const isIntraState = originState === dState;
+
+              if (isIntraState) {
+                estimatedDelivery = 2500 + Math.max(0, cart.itemCount - 1) * 500;
+                corridorName = "Intra-State Dispatch";
+                corridorNote = `Origin: ${cart.items[0].sellerState} → Destination: ${deliveryState}`;
+              } else {
+                const isCrossZone =
+                  (northernStates.includes(originState) && southernStates.includes(dState)) ||
+                  (southernStates.includes(originState) && northernStates.includes(dState));
+
+                if (isCrossZone) {
+                  estimatedDelivery = 14500 + Math.max(0, cart.itemCount - 1) * 500;
+                  corridorName = "Inter-State Freight Corridor";
+                  corridorNote = `Cross-zone transit: ${cart.items[0].sellerState} → ${deliveryState}`;
+                } else {
+                  estimatedDelivery = 7500 + Math.max(0, cart.itemCount - 1) * 500;
+                  corridorName = "Regional Transit Corridor";
+                  corridorNote = `Regional transfer: ${cart.items[0].sellerState} → ${deliveryState}`;
+                }
+              }
+            }
+
+            return (
+              <div className="pt-4 border-t border-neutral-100 space-y-2.5 text-xs text-neutral-600">
+                <div className="flex justify-between">
+                  <span>Produce Subtotal ({cart.itemCount} {cart.itemCount === 1 ? "item" : "items"})</span>
+                  <span className="font-semibold text-neutral-900">{formatNGN(cart.subtotal)}</span>
+                </div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-medium text-neutral-800">Estimated Logistics Transit</span>
+                    <span className="block text-[11px] text-neutral-400">
+                      {corridorName} ({corridorNote})
+                    </span>
+                  </div>
+                  <span className="font-semibold text-emerald-800">
+                    ≈ {formatNGN(estimatedDelivery)}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-neutral-100 text-sm font-black text-neutral-900">
+                  <span>Produce Order Subtotal</span>
+                  <span className="text-lg text-emerald-700">{formatNGN(cart.total)}</span>
+                </div>
+                <p className="text-[10px] text-neutral-400 leading-normal">
+                  Logistics freight is provisioned via licensed 3PL haulage carriers based on corridor transit distance. Carrier tracking is provided upon dispatch.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Submission */}
           <button
@@ -403,8 +450,8 @@ export function CartView({ cart, userProfile }: CartViewProps) {
             {isPending ? "Creating Order..." : "Place Produce Order"}
           </button>
 
-          <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
-            Placing this order atomically reserves produce from the farm seller. Payment and fulfillment processing will proceed in Phase 0.6.
+          <p className="text-[11px] text-neutral-500 text-center leading-relaxed">
+            Placing this order secures your produce inventory reservation with the farm. You will review consignment details and complete escrow payment on the next screen.
           </p>
         </form>
       </div>

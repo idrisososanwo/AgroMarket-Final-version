@@ -10,7 +10,7 @@ import {
   RegionalPriceComparison,
   StatePriceSummary,
 } from "./types";
-import { normalizePrice } from "./normalization";
+import { normalizePrice, calculateTradeUnitEquivalent } from "./normalization";
 import { calculatePriceTrend } from "./trend";
 
 export class PriceService {
@@ -352,6 +352,8 @@ export class PriceService {
         productName,
         canonicalUnit: "KG",
         nationalAverage: null,
+        dominantTradeUnit: product?.default_unit || "KG",
+        dominantTradeUnitAverage: null,
         lowestObserved: null,
         highestObserved: null,
         stateSummaries: [],
@@ -359,15 +361,31 @@ export class PriceService {
       };
     }
 
-    // Partition by state
-    const stateMap = new Map<
-      string,
-      {
-        prices: number[];
-        markets: string[];
-        latestDate: string;
+    // Determine dominant trade unit across observations
+    const unitCounts = new Map<string, number>();
+    for (const r of rows) {
+      unitCounts.set(r.unit, (unitCounts.get(r.unit) || 0) + 1);
+    }
+    let dominantTradeUnit = rows[0]?.unit || product?.default_unit || "KG";
+    let maxCount = 0;
+    for (const [u, count] of unitCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantTradeUnit = u;
       }
-    >();
+    }
+
+    // Partition by state
+    type StateAggregate = {
+      prices: number[];
+      markets: string[];
+      originalUnits: string[];
+      originalUnitPrices: number[];
+      canonicalUnits: string[];
+      latestDate: string;
+    };
+
+    const stateMap = new Map<string, StateAggregate>();
 
     const allNormalizedPrices: number[] = [];
 
@@ -376,18 +394,24 @@ export class PriceService {
         r.normalized_price !== null ? Number(r.normalized_price) : Number(r.price);
       allNormalizedPrices.push(priceVal);
 
-      const existing: {
-        prices: number[];
-        markets: string[];
-        latestDate: string;
-      } = stateMap.get(r.state) || {
+      const existing: StateAggregate = stateMap.get(r.state) || {
         prices: [],
         markets: [],
+        originalUnits: [],
+        originalUnitPrices: [],
+        canonicalUnits: [],
         latestDate: r.observed_at,
       };
       existing.prices.push(priceVal);
       if (!existing.markets.includes(r.market_name)) {
         existing.markets.push(r.market_name);
+      }
+      if (!existing.originalUnits.includes(r.unit)) {
+        existing.originalUnits.push(r.unit);
+      }
+      existing.originalUnitPrices.push(Number(r.price));
+      if (r.normalized_unit && !existing.canonicalUnits.includes(r.normalized_unit)) {
+        existing.canonicalUnits.push(r.normalized_unit);
       }
       stateMap.set(r.state, existing);
     }
@@ -405,6 +429,17 @@ export class PriceService {
       if (info.prices.length >= 10) sufficiency = "HIGHER_CONFIDENCE";
       else if (info.prices.length >= 3) sufficiency = "MODERATE";
 
+      const originalUnit = info.originalUnits[0] || dominantTradeUnit;
+      const originalUnitPrice =
+        info.originalUnitPrices.length > 0
+          ? Number(
+              (
+                info.originalUnitPrices.reduce((sum, p) => sum + p, 0) /
+                info.originalUnitPrices.length
+              ).toFixed(0)
+            )
+          : calculateTradeUnitEquivalent(avg, originalUnit) || undefined;
+
       stateSummaries.push({
         state: st,
         averagePrice: avg,
@@ -413,7 +448,9 @@ export class PriceService {
         observationCount: info.prices.length,
         lastObservedAt: info.latestDate,
         dataSufficiency: sufficiency,
-        unit: "KG",
+        unit: info.canonicalUnits[0] || "KG",
+        originalUnit,
+        originalUnitPrice,
       });
     }
 
@@ -430,6 +467,18 @@ export class PriceService {
           )
         : null;
 
+    // Dominant trade unit average (e.g. 50kg bag price equivalent)
+    const dominantUnitRows = rows.filter((r) => r.unit === dominantTradeUnit);
+    const dominantTradeUnitAverage =
+      dominantUnitRows.length > 0
+        ? Number(
+            (
+              dominantUnitRows.reduce((sum, r) => sum + Number(r.price), 0) /
+              dominantUnitRows.length
+            ).toFixed(0)
+          )
+        : calculateTradeUnitEquivalent(nationalAverage, dominantTradeUnit);
+
     let lowestObserved = null;
     let highestObserved = null;
 
@@ -437,18 +486,25 @@ export class PriceService {
       const lowestState = stateSummaries[0];
       const highestState = stateSummaries[stateSummaries.length - 1];
 
+      const lowestStateInfo = stateMap.get(lowestState.state);
+      const highestStateInfo = stateMap.get(highestState.state);
+
       lowestObserved = {
         state: lowestState.state,
         price: lowestState.minPrice,
-        marketName: stateMap.get(lowestState.state)?.markets[0] || lowestState.state,
+        marketName: lowestStateInfo?.markets[0] || lowestState.state,
         wording: "Lowest observed price among available records",
+        originalPrice: lowestStateInfo?.originalUnitPrices[0],
+        originalUnit: lowestStateInfo?.originalUnits[0],
       };
 
       highestObserved = {
         state: highestState.state,
         price: highestState.maxPrice,
-        marketName: stateMap.get(highestState.state)?.markets[0] || highestState.state,
+        marketName: highestStateInfo?.markets[0] || highestState.state,
         wording: "Highest observed price among available records",
+        originalPrice: highestStateInfo?.originalUnitPrices[0],
+        originalUnit: highestStateInfo?.originalUnits[0],
       };
     }
 
@@ -457,11 +513,53 @@ export class PriceService {
       productName,
       canonicalUnit: "KG",
       nationalAverage,
+      dominantTradeUnit,
+      dominantTradeUnitAverage,
       lowestObserved,
       highestObserved,
       stateSummaries,
       totalObservations: rows.length,
     };
+  }
+
+  /**
+   * Retrieves active marketplace producer offers for a product.
+   * Enables the market intelligence view to display live producer offers
+   * side-by-side with historical or surveyed wholesale prices.
+   */
+  static async getActiveMarketplaceOffers(productId: string) {
+    const admin = createAdminClient();
+    const { data: listings } = await admin
+      .from("listings")
+      .select(`
+        id, title, price_per_unit, unit, minimum_order_quantity,
+        state, lga, is_verified, created_at,
+        inventory (quantity_available),
+        farms (name)
+      `)
+      .eq("product_id", productId)
+      .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    if (!listings) return [];
+
+    return listings.map((l) => {
+      const inv = Array.isArray(l.inventory) ? l.inventory[0] : l.inventory;
+      const farm = Array.isArray(l.farms) ? l.farms[0] : l.farms;
+      return {
+        id: l.id,
+        title: l.title,
+        pricePerUnit: Number(l.price_per_unit),
+        unit: l.unit,
+        minimumOrderQuantity: Number(l.minimum_order_quantity),
+        state: l.state,
+        lga: l.lga,
+        isVerified: Boolean(l.is_verified),
+        farmName: farm?.name || null,
+        quantityAvailable: Number(inv?.quantity_available || 0),
+      };
+    });
   }
 
   /**

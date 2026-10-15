@@ -36,8 +36,8 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const selectedProductId = params.productId || defaultProduct?.id || "";
   const selectedState = params.state || "";
 
-  // 2. Fetch price intelligence datasets in parallel
-  const [comparison, trend, aggregation, recentObservations] = await Promise.all([
+  // 2. Fetch price intelligence datasets and active marketplace producer offers in parallel
+  const [comparison, trend, aggregation, recentObservations, activeOffers] = await Promise.all([
     PriceService.getRegionalPriceComparison(selectedProductId),
     PriceService.getPriceTrend(selectedProductId, selectedState || undefined, 30),
     PriceService.getPriceAggregation(selectedProductId, selectedState || undefined),
@@ -46,6 +46,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
       state: selectedState || undefined,
       limit: 20,
     }),
+    PriceService.getActiveMarketplaceOffers(selectedProductId),
   ]);
 
   return (
@@ -69,6 +70,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
           trend={trend}
           aggregation={aggregation}
           recentObservations={recentObservations}
+          activeOffers={activeOffers}
         />
       </div>
     </div>

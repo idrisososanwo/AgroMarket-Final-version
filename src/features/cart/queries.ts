@@ -183,7 +183,7 @@ export async function getBuyerCart(userId?: string): Promise<BuyerCart | null> {
         minimumOrderQuantity: Number(listing.minimum_order_quantity || 1),
         quantityAvailable: Number(inv?.quantity_available || 0),
         sellerId: listing.seller_id,
-        sellerName: prof?.full_name || "Verified Farmer",
+        sellerName: prof?.full_name || "Registered Producer",
         sellerState: listing.state,
         sellerLga: listing.lga,
         subtotal,

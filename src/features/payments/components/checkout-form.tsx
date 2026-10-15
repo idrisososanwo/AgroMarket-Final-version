@@ -59,6 +59,17 @@ export function CheckoutForm({ orderId, orderNumber, totalAmount }: CheckoutForm
         </div>
       )}
 
+      {/* Pre-Launch Test Mode Sandbox Transparency Banner */}
+      <div className="rounded-xl bg-amber-50 border border-amber-300 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+        <span className="font-bold text-amber-600 text-sm mt-0.5">ℹ</span>
+        <div>
+          <span className="font-bold block text-amber-950">Controlled Test Environment (Sandbox Mode)</span>
+          <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+            Payment gateways are operating in Paystack / Flutterwave test mode. No real debit card charges or bank deductions will occur. Use test credentials to simulate transaction completion.
+          </p>
+        </div>
+      </div>
+
       <div>
         <div className="flex items-center justify-between mb-3">
           <label className="block text-sm font-medium text-emerald-950">

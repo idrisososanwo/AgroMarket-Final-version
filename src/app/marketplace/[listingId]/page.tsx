@@ -141,9 +141,42 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
                 <div className="text-right">
                   <span className="inline-flex items-center rounded-md bg-neutral-100 px-2 py-1 text-xs font-mono font-medium text-neutral-600">
-                    Stock: {listing.quantityAvailable}
+                    Stock: {listing.quantityAvailable} {listing.unit}
                   </span>
                 </div>
+              </div>
+
+              {/* Physical Inventory Verification Status */}
+              <div className="mt-4">
+                {listing.isVerified ? (
+                  <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 flex items-start gap-3">
+                    <div className="h-5 w-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5">
+                      ✓
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-emerald-950">
+                        Verified Physical Farm Stock
+                      </h4>
+                      <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                        Produce quantity, farm location, and quality have been physically surveyed and confirmed by an AgroMarket agricultural enumerator.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 flex items-start gap-3">
+                    <div className="h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs shrink-0 mt-0.5">
+                      ℹ
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-amber-950">
+                        Producer Self-Listed / Staging Inventory
+                      </h4>
+                      <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                        This stock is self-reported by the producer. Your transaction remains 100% protected in escrow until produce is delivered, inspected, and accepted.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -211,6 +244,19 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                   quantityAvailable={listing.quantityAvailable}
                 />
               </div>
+
+              {/* Escrow & Dispatch Assurance */}
+              <div className="mt-4 pt-3 border-t border-neutral-100 space-y-1.5 text-[11px] text-neutral-500">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+                  <span>🛡️ 100% Escrow Protection</span>
+                </div>
+                <p className="leading-relaxed">
+                  Your payment remains securely in escrow until you inspect and accept your delivery.
+                </p>
+                <div className="text-[10px] text-neutral-400">
+                  Logistics: Corridor haulage via licensed 3PL freight carriers.
+                </div>
+              </div>
             </div>
 
             {/* Seller Information Card */}
@@ -235,7 +281,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                     )}
                   </div>
                   <div className="text-xs text-neutral-500 font-medium">
-                    {listing.sellerVerified ? "Verified Producer" : "Registered Seller"}
+                    {listing.sellerVerified
+                      ? "Verified Producer (Field Inspected)"
+                      : "Registered Producer (Pending Field Survey)"}
                   </div>
                 </div>
               </div>

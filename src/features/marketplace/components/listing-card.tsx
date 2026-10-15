@@ -73,7 +73,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           {isAvailable ? (
             <span className="inline-flex items-center text-emerald-700 font-medium">
               <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-500"></span>
-              {listing.quantityAvailable} {listing.unit} available
+              {listing.quantityAvailable} {listing.unit} in stock
             </span>
           ) : (
             <span className="inline-flex items-center text-rose-600 font-medium">
@@ -82,9 +82,15 @@ export function ListingCard({ listing }: ListingCardProps) {
             </span>
           )}
 
-          <span className="text-neutral-400 text-[11px]">
-            {listing.lga}, {listing.state}
-          </span>
+          {listing.isVerified ? (
+            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+              Verified Stock
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 border border-neutral-200 px-1.5 py-0.5 rounded">
+              Staging / Demo Stock
+            </span>
+          )}
         </div>
 
         {/* Seller Info */}
@@ -96,14 +102,21 @@ export function ListingCard({ listing }: ListingCardProps) {
             <span className="truncate font-medium text-neutral-800">
               {listing.sellerName}
             </span>
-            {listing.sellerVerified && (
+            {listing.sellerVerified ? (
               <span
-                title="Verified Seller"
+                title="Verified Seller (Identity & Farm Confirmed)"
                 className="inline-flex items-center text-emerald-600 shrink-0"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                 </svg>
+              </span>
+            ) : (
+              <span
+                title="Registered Producer (Pending field verification)"
+                className="text-[10px] text-neutral-400 font-normal shrink-0"
+              >
+                (Unverified)
               </span>
             )}
           </div>

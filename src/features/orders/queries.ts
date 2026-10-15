@@ -66,7 +66,7 @@ function mapOrderRow(row: RawOrderRow): OrderDetail {
       totalPrice: Number(item.total_price),
       status: item.status as OrderItemDetail["status"],
       createdAt: item.created_at,
-      sellerName: seller?.full_name || "Verified Farmer",
+      sellerName: seller?.full_name || "Registered Producer",
       sellerPhone: seller?.phone || undefined,
       sellerState: seller?.state || undefined,
     };

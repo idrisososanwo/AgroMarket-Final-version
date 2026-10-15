@@ -84,6 +84,8 @@ export interface StatePriceSummary {
   lastObservedAt: string;
   dataSufficiency: DataSufficiency;
   unit: string;
+  originalUnit?: string;
+  originalUnitPrice?: number;
 }
 
 export interface RegionalPriceComparison {
@@ -91,17 +93,23 @@ export interface RegionalPriceComparison {
   productName: string;
   canonicalUnit: string;
   nationalAverage: number | null;
+  dominantTradeUnit?: string;
+  dominantTradeUnitAverage?: number | null;
   lowestObserved: {
     state: string;
     price: number;
     marketName: string;
     wording: string;
+    originalPrice?: number;
+    originalUnit?: string;
   } | null;
   highestObserved: {
     state: string;
     price: number;
     marketName: string;
     wording: string;
+    originalPrice?: number;
+    originalUnit?: string;
   } | null;
   stateSummaries: StatePriceSummary[];
   totalObservations: number;

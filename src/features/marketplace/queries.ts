@@ -114,7 +114,7 @@ function mapListingRow(
     quantityOnHand: Number(inv?.quantity_on_hand || 0),
     quantityReserved: Number(inv?.quantity_reserved || 0),
     quantityAvailable: Number(inv?.quantity_available || 0),
-    sellerName: seller?.full_name || "Verified Farmer",
+    sellerName: seller?.full_name || (seller?.is_verified ? "Verified Producer" : "Registered Producer"),
     sellerPhone: null,
     sellerVerified: Boolean(seller?.is_verified),
     farmName: farm?.name,
