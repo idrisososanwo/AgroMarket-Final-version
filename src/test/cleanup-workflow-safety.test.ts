@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
+import { spawnSync } from "child_process";
 
 /**
  * Pure evaluator replicating the exact shell script logic in
@@ -8,7 +9,7 @@ import path from "path";
  */
 export function evaluateWorkflowDryRun(
   eventName: string,
-  inputDryRun?: string | null
+  inputDryRun?: string | null,
 ): { dryRun: boolean; error?: string } {
   if (eventName === "workflow_dispatch") {
     // Manual execution: default to safe dry-run (true).
@@ -42,7 +43,7 @@ export function buildTargetCleanupUrl(
   endpointBase: string,
   eventName: string,
   inputDryRun?: string | null,
-  inputTimeout?: string | null
+  inputTimeout?: string | null,
 ): { url?: string; error?: string } {
   const modeResult = evaluateWorkflowDryRun(eventName, inputDryRun);
   if (modeResult.error) {
@@ -61,16 +62,14 @@ export function buildTargetCleanupUrl(
 describe("AgroMarket — Cleanup Workflow Dry-Run Safety Suite", () => {
   const workflowPath = path.resolve(
     process.cwd(),
-    ".github/workflows/cleanup-abandoned-orders.yml"
+    ".github/workflows/cleanup-abandoned-orders.yml",
   );
   const workflowContent = fs.readFileSync(workflowPath, "utf-8");
 
   describe("1. Static Workflow Declaration Invariants", () => {
     it("configures workflow_dispatch input dry_run with default true", () => {
       // Must contain default: true under dry_run input
-      const dryRunMatch = workflowContent.match(
-        /dry_run:[\s\S]*?default:\s*(true|false)/
-      );
+      const dryRunMatch = workflowContent.match(/dry_run:[\s\S]*?default:\s*(true|false)/);
       expect(dryRunMatch).not.toBeNull();
       expect(dryRunMatch![1]).toBe("true");
     });
@@ -89,11 +88,10 @@ describe("AgroMarket — Cleanup Workflow Dry-Run Safety Suite", () => {
       expect(workflowContent).toContain("--max-time 30");
     });
 
-    it("binds EVENT_NAME and INPUT_DRY_RUN to step environment", () => {
+    it("binds EVENT_NAME, INPUT_DRY_RUN, and EVENT_INPUT_DRY_RUN to step environment", () => {
       expect(workflowContent).toContain("EVENT_NAME: ${{ github.event_name }}");
-      expect(workflowContent).toContain(
-        "INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}"
-      );
+      expect(workflowContent).toContain("INPUT_DRY_RUN: ${{ inputs.dry_run }}");
+      expect(workflowContent).toContain("EVENT_INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}");
     });
   });
 
@@ -141,9 +139,7 @@ describe("AgroMarket — Cleanup Workflow Dry-Run Safety Suite", () => {
 
       const prResult = evaluateWorkflowDryRun("pull_request");
       expect(prResult.error).toBeDefined();
-      expect(prResult.error).toContain(
-        "Unsupported workflow event 'pull_request'"
-      );
+      expect(prResult.error).toContain("Unsupported workflow event 'pull_request'");
       expect(prResult.dryRun).toBe(false);
     });
   });
@@ -165,144 +161,219 @@ describe("AgroMarket — Cleanup Workflow Dry-Run Safety Suite", () => {
     });
 
     it("generates dryRun=false URL on manual dispatch with explicit false", () => {
-      const { url, error } = buildTargetCleanupUrl(
-        base,
-        "workflow_dispatch",
-        "false"
-      );
+      const { url, error } = buildTargetCleanupUrl(base, "workflow_dispatch", "false");
       expect(error).toBeUndefined();
       expect(url).toBe(`${base}?timeoutMinutes=60&dryRun=false`);
     });
 
     it("refuses to generate URL on invalid inputs", () => {
-      const { url, error } = buildTargetCleanupUrl(
-        base,
-        "workflow_dispatch",
-        "corrupted"
-      );
+      const { url, error } = buildTargetCleanupUrl(base, "workflow_dispatch", "corrupted");
       expect(url).toBeUndefined();
       expect(error).toContain("Invalid dry_run input");
     });
   });
 
-  describe("4. Direct Bash Execution of Script Snippet", () => {
+  describe("4. Direct Bash Execution of Dynamically Extracted Workflow Script", () => {
     const gitBashPath = "C:\\Program Files\\Git\\bin\\bash.exe";
     const hasGitBash = fs.existsSync(gitBashPath);
 
-    // Extract the parameter evaluation block from the workflow YAML
-    const scriptBlock = `
-CRON_TOKEN="\${CRON_SECRET:-\$SCHEDULER_SECRET}"
-if [ -n "\$CRON_TOKEN" ]; then
-  echo "MASKED" > /dev/null
-fi
+    // Dynamically extract the exact run script directly from the workflow YAML
+    // to guarantee 100% test fidelity against the committed workflow.
+    const runScriptMatch = workflowContent.match(
+      /run:\s*\|\r?\n([\s\S]+?)(?=\r?\n\s*(?:- name|\w+:|$))/,
+    );
+    expect(runScriptMatch).not.toBeNull();
+    const rawExtractedScript = runScriptMatch![1]
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^ {10}/, ""))
+      .join("\n");
 
-if [ -z "\$CRON_TOKEN" ]; then
-  echo "ERROR_MISSING_SECRET"
-  exit 1
-fi
-
-if [ "\$EVENT_NAME" = "workflow_dispatch" ]; then
-  if [ -z "\$INPUT_DRY_RUN" ] || [ "\$INPUT_DRY_RUN" = "true" ]; then
-    DRY_RUN_VAL="true"
-  elif [ "\$INPUT_DRY_RUN" = "false" ]; then
-    DRY_RUN_VAL="false"
+    // Prepend a mock curl function to intercept network calls safely during tests
+    const executableScript = `
+curl() {
+  # Mock curl output: payload followed by newline and http_code
+  if [ -n "$MOCK_CURL_BODY" ]; then
+    echo "$MOCK_CURL_BODY"
   else
-    echo "ERROR_INVALID_INPUT"
-    exit 1
+    echo "{\\"success\\":true,\\"data\\":{\\"success\\":true,\\"dryRun\\":\${DRY_RUN_VAL}}}"
   fi
-elif [ "\$EVENT_NAME" = "schedule" ]; then
-  DRY_RUN_VAL="false"
-else
-  echo "ERROR_UNSUPPORTED_EVENT"
-  exit 1
-fi
-
-TIMEOUT_VAL="\${INPUT_TIMEOUT:-60}"
-TARGET_URL="\${ENDPOINT_BASE}?timeoutMinutes=\${TIMEOUT_VAL}&dryRun=\${DRY_RUN_VAL}"
-echo "RESULT_TARGET_URL=\${TARGET_URL}"
-echo "RESULT_DRY_RUN=\${DRY_RUN_VAL}"
+  echo "\${MOCK_CURL_STATUS:-200}"
+}
+export -f curl 2>/dev/null || true
+${rawExtractedScript}
 `;
 
-    function runBashSnippet(env: Record<string, string>) {
-      const { spawnSync } = require("child_process");
+    function runExtractedWorkflowScript(env: Record<string, string>) {
       const bashExecutable = hasGitBash ? gitBashPath : "bash";
-      return spawnSync(bashExecutable, ["-c", scriptBlock], {
+      return spawnSync(bashExecutable, ["-c", executableScript], {
         env: {
           ...process.env,
-          ENDPOINT_BASE: "https://example.com/api/cron",
+          ENDPOINT_BASE: "https://example.com/api/cron/cleanup-abandoned-orders",
           ...env,
         },
         encoding: "utf-8",
       });
     }
 
-    it("executes bash script: manual dispatch default produces dryRun=true", () => {
+    it("verifies the script is dynamically extracted from the committed YAML file", () => {
+      expect(rawExtractedScript).toContain("CRON_TOKEN=");
+      expect(rawExtractedScript).toContain("RAW_DRY_RUN=");
+      expect(rawExtractedScript).toContain('EVENT_NAME" = "workflow_dispatch"');
+      expect(rawExtractedScript).toContain('EVENT_NAME" = "schedule"');
+      expect(rawExtractedScript).toContain("Effective dryRun: ${DRY_RUN_VAL}");
+      expect(rawExtractedScript).toContain("Target Endpoint Path: ${ENDPOINT_PATH}");
+      // Guarantees full TARGET_URL is NOT printed in the execution log
+      expect(rawExtractedScript).not.toContain('echo "Target URL:');
+      // Verifies strict JSON and success validation
+      expect(rawExtractedScript).toContain("jq empty");
+      expect(rawExtractedScript).toContain('"$SUCCESS_FIELD" != "true"');
+      expect(rawExtractedScript).toContain("command -v node");
+    });
+
+    it("executes extracted script: manual dispatch with no input defaults to dryRun=true", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "mock_secret",
         EVENT_NAME: "workflow_dispatch",
         INPUT_DRY_RUN: "",
+        EVENT_INPUT_DRY_RUN: "",
       });
       expect(res.status).toBe(0);
-      expect(res.stdout).toContain("RESULT_DRY_RUN=true");
-      expect(res.stdout).toContain("dryRun=true");
+      expect(res.stdout).toContain("Trigger Event: workflow_dispatch");
+      expect(res.stdout).toContain("Effective dryRun: true");
+      expect(res.stdout).toContain("Target Endpoint Path: /api/cron/cleanup-abandoned-orders");
+      expect(res.stdout).not.toContain("Target URL: https://");
     });
 
-    it("executes bash script: manual dispatch explicit false produces dryRun=false", () => {
+    it("executes extracted script: manual dispatch with true input produces dryRun=true", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
+        CRON_SECRET: "mock_secret",
+        EVENT_NAME: "workflow_dispatch",
+        INPUT_DRY_RUN: "true",
+      });
+      expect(res.status).toBe(0);
+      expect(res.stdout).toContain("Effective dryRun: true");
+    });
+
+    it("executes extracted script: manual dispatch with uppercase 'TRUE' input produces dryRun=true", () => {
+      if (!hasGitBash) return;
+      const res = runExtractedWorkflowScript({
+        CRON_SECRET: "mock_secret",
+        EVENT_NAME: "workflow_dispatch",
+        INPUT_DRY_RUN: " TRUE ",
+      });
+      expect(res.status).toBe(0);
+      expect(res.stdout).toContain("Effective dryRun: true");
+    });
+
+    it("executes extracted script: manual dispatch explicit false produces dryRun=false", () => {
+      if (!hasGitBash) return;
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "mock_secret",
         EVENT_NAME: "workflow_dispatch",
         INPUT_DRY_RUN: "false",
       });
       expect(res.status).toBe(0);
-      expect(res.stdout).toContain("RESULT_DRY_RUN=false");
-      expect(res.stdout).toContain("dryRun=false");
+      expect(res.stdout).toContain("Trigger Event: workflow_dispatch");
+      expect(res.stdout).toContain("Effective dryRun: false");
     });
 
-    it("executes bash script: schedule produces dryRun=false", () => {
+    it("executes extracted script: schedule produces dryRun=false", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "mock_secret",
         EVENT_NAME: "schedule",
         INPUT_DRY_RUN: "",
       });
       expect(res.status).toBe(0);
-      expect(res.stdout).toContain("RESULT_DRY_RUN=false");
-      expect(res.stdout).toContain("dryRun=false");
+      expect(res.stdout).toContain("Trigger Event: schedule");
+      expect(res.stdout).toContain("Effective dryRun: false");
     });
 
-    it("executes bash script: invalid input fails closed with exit 1", () => {
+    it("executes extracted script: invalid input fails closed with exit 1", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "mock_secret",
         EVENT_NAME: "workflow_dispatch",
         INPUT_DRY_RUN: "bad_input",
       });
       expect(res.status).toBe(1);
-      expect(res.stdout).toContain("ERROR_INVALID_INPUT");
+      expect(res.stderr + res.stdout).toContain("Invalid dry_run input 'bad_input'");
     });
 
-    it("executes bash script: unsupported event fails closed with exit 1", () => {
+    it("executes extracted script: unsupported event fails closed with exit 1", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "mock_secret",
         EVENT_NAME: "push",
         INPUT_DRY_RUN: "",
       });
       expect(res.status).toBe(1);
-      expect(res.stdout).toContain("ERROR_UNSUPPORTED_EVENT");
+      expect(res.stderr + res.stdout).toContain("Unsupported workflow event 'push'");
     });
 
-    it("executes bash script: missing secret fails closed with exit 1", () => {
+    it("executes extracted script: missing secret fails closed with exit 1", () => {
       if (!hasGitBash) return;
-      const res = runBashSnippet({
+      const res = runExtractedWorkflowScript({
         CRON_SECRET: "",
         SCHEDULER_SECRET: "",
         EVENT_NAME: "schedule",
       });
       expect(res.status).toBe(1);
-      expect(res.stdout).toContain("ERROR_MISSING_SECRET");
+      expect(res.stderr + res.stdout).toContain(
+        "Neither CRON_SECRET nor SCHEDULER_SECRET is configured",
+      );
+    });
+
+    it("confirms no full URL or bearer token is echoed to output", () => {
+      if (!hasGitBash) return;
+      const res = runExtractedWorkflowScript({
+        CRON_SECRET: "super_secret_token_abc_123",
+        EVENT_NAME: "workflow_dispatch",
+        INPUT_DRY_RUN: "true",
+      });
+      expect(res.status).toBe(0);
+      // GitHub Actions uses `::add-mask::<secret>` to instruct the runner to mask values in logs
+      expect(res.stdout).toContain("::add-mask::super_secret_token_abc_123");
+      const diagnosticLogs = res.stdout
+        .split("\n")
+        .filter((line: string) => !line.startsWith("::add-mask::"))
+        .join("\n");
+      // Diagnostic and execution logs must never leak the secret
+      expect(diagnosticLogs).not.toContain("super_secret_token_abc_123");
+      // Full URL and Bearer auth headers must never be echoed
+      expect(res.stdout).not.toContain("Target URL:");
+      expect(res.stdout).not.toContain("Bearer");
+    });
+
+    it("executes extracted script: HTTP 200 with success=false fails with exit 1", () => {
+      if (!hasGitBash) return;
+      const res = runExtractedWorkflowScript({
+        CRON_SECRET: "mock_secret",
+        EVENT_NAME: "workflow_dispatch",
+        INPUT_DRY_RUN: "true",
+        MOCK_CURL_BODY: JSON.stringify({
+          success: false,
+          error: "Database connection failed",
+        }),
+      });
+      expect(res.status).toBe(1);
+      expect(res.stderr + res.stdout).toContain(
+        "payload reported failure: Database connection failed",
+      );
+    });
+
+    it("executes extracted script: HTTP 200 with malformed JSON fails with exit 1", () => {
+      if (!hasGitBash) return;
+      const res = runExtractedWorkflowScript({
+        CRON_SECRET: "mock_secret",
+        EVENT_NAME: "workflow_dispatch",
+        INPUT_DRY_RUN: "true",
+        MOCK_CURL_BODY: "<html><body>502 Bad Gateway</body></html>",
+      });
+      expect(res.status).toBe(1);
+      expect(res.stderr + res.stdout).toContain("not valid JSON");
     });
   });
 });

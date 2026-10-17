@@ -35,8 +35,9 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SCHEDULER_SECRET: ${{ secrets.SCHEDULER_SECRET }}
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
-          INPUT_TIMEOUT: ${{ github.event.inputs.timeout_minutes || '60' }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          EVENT_INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          INPUT_TIMEOUT: ${{ inputs.timeout_minutes || github.event.inputs.timeout_minutes || '60' }}
         run: |
           # 1. Resolve bearer token with fallback from CRON_SECRET to SCHEDULER_SECRET
           CRON_TOKEN="${CRON_SECRET:-$SCHEDULER_SECRET}"
@@ -53,20 +54,27 @@ jobs:
             exit 1
           fi
 
-          # 2. Validate event name and determine dryRun mode
+          # 2. Resolve and normalize raw dry_run input from either inputs or event payload
+          RAW_DRY_RUN="${INPUT_DRY_RUN}"
+          if [ -z "$RAW_DRY_RUN" ]; then
+            RAW_DRY_RUN="${EVENT_INPUT_DRY_RUN}"
+          fi
+          RAW_DRY_RUN=$(echo "$RAW_DRY_RUN" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+
+          # 3. Validate event name and determine effective dryRun mode
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            # Manual execution: default to safe dry-run (true).
-            # Only execute live cleanup if explicitly passed 'false'.
-            if [ -z "$INPUT_DRY_RUN" ] || [ "$INPUT_DRY_RUN" = "true" ]; then
+            # Manual execution: strictly default to safe dry-run (true).
+            # Live cleanup is executed ONLY when explicitly set to 'false'.
+            if [ -z "$RAW_DRY_RUN" ] || [ "$RAW_DRY_RUN" = "true" ]; then
               DRY_RUN_VAL="true"
-            elif [ "$INPUT_DRY_RUN" = "false" ]; then
+            elif [ "$RAW_DRY_RUN" = "false" ]; then
               DRY_RUN_VAL="false"
             else
-              echo "::error::Invalid dry_run input '${INPUT_DRY_RUN}'. Must be 'true' or 'false'. Failing closed."
+              echo "::error::Invalid dry_run input '${RAW_DRY_RUN}'. Must be 'true' or 'false'. Failing closed."
               exit 1
             fi
           elif [ "$EVENT_NAME" = "schedule" ]; then
-            # Automated cron schedule: execute live cleanup
+            # Automated 15-minute cron schedule: executes live cleanup
             DRY_RUN_VAL="false"
           else
             # Fail closed on any unexpected or unsupported event triggers
@@ -74,7 +82,7 @@ jobs:
             exit 1
           fi
 
-          # 3. Sanitize timeoutMinutes input
+          # 4. Sanitize timeoutMinutes input
           TIMEOUT_VAL="${INPUT_TIMEOUT:-60}"
           if ! echo "$TIMEOUT_VAL" | grep -qE '^[0-9]+$'; then
             echo "::warning::Invalid timeoutMinutes input '${TIMEOUT_VAL}'; defaulting to 60"
@@ -82,7 +90,16 @@ jobs:
           fi
 
           TARGET_URL="${ENDPOINT_BASE}?timeoutMinutes=${TIMEOUT_VAL}&dryRun=${DRY_RUN_VAL}"
-          echo "Invoking cleanup worker (event: ${EVENT_NAME}, dryRun: ${DRY_RUN_VAL}, timeoutMinutes: ${TIMEOUT_VAL})..."
+          ENDPOINT_PATH="/api/cron/cleanup-abandoned-orders"
+
+          echo "=== Abandoned Order Cleanup Execution ==="
+          echo "Trigger Event: ${EVENT_NAME}"
+          echo "Input dry_run: ${RAW_DRY_RUN:-<omitted (defaulted to true)>}"
+          echo "Input timeout_minutes: ${INPUT_TIMEOUT}"
+          echo "Effective dryRun: ${DRY_RUN_VAL}"
+          echo "Effective timeoutMinutes: ${TIMEOUT_VAL}"
+          echo "Target Endpoint Path: ${ENDPOINT_PATH}"
+          echo "=========================================="
 
           # Execute request with strict 30-second timeout.
           # The bearer token is passed strictly in HTTP header; headers are never echoed to workflow output.
@@ -111,12 +128,43 @@ jobs:
             exit 1
           fi
 
-          # Verify application-level success in JSON response if jq is available
+          # 5. Verify application-level success in JSON response
           if command -v jq >/dev/null 2>&1; then
+            # Verify body is valid JSON
+            if ! echo "$HTTP_BODY" | jq empty >/dev/null 2>&1; then
+              echo "::error::Endpoint returned HTTP 200 but response body is not valid JSON"
+              exit 1
+            fi
+
+            # Verify success field is strictly true
             SUCCESS_FIELD=$(echo "$HTTP_BODY" | jq -r '.success // empty' 2>/dev/null || true)
-            if [ "$SUCCESS_FIELD" = "false" ]; then
-              ERROR_MSG=$(echo "$HTTP_BODY" | jq -r '.error // "Unknown execution error"' 2>/dev/null || true)
+            if [ "$SUCCESS_FIELD" != "true" ]; then
+              ERROR_MSG=$(echo "$HTTP_BODY" | jq -r '.error // "Payload did not return success=true"' 2>/dev/null || true)
               echo "::error::Endpoint returned HTTP 200 but payload reported failure: ${ERROR_MSG}"
               exit 1
             fi
+          elif command -v node >/dev/null 2>&1; then
+            NODE_STATUS=0
+            NODE_OUTPUT=$(node -e '
+              try {
+                const body = JSON.parse(process.argv[1]);
+                if (body && body.success === true) {
+                  process.exit(0);
+                } else {
+                  console.error(body && body.error ? body.error : "Payload did not return success=true");
+                  process.exit(2);
+                }
+              } catch (e) {
+                console.error("Response body is not valid JSON");
+                process.exit(3);
+              }
+            ' "$HTTP_BODY" 2>&1) || NODE_STATUS=$?
+
+            if [ "$NODE_STATUS" -ne 0 ]; then
+              echo "::error::Endpoint returned HTTP 200 but payload reported failure: ${NODE_OUTPUT}"
+              exit 1
+            fi
+          else
+            echo "::error::Neither jq nor node is available to validate JSON response"
+            exit 1
           fi
